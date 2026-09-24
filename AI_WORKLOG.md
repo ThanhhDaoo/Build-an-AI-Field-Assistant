@@ -18,7 +18,7 @@
 | **Giai đoạn 2** | **Xử lý Phần cứng, Audio Pipeline & Bóc băng Giọng nói (Speech-to-Text)** | **ĐÃ HOÀN THÀNH** | `4e55f6e`, `893de9b`, `90520ff` |
 | **Giai đoạn 3** | **AI Service & Bóc tách Dữ liệu Hiện trường (Structured Output & Multi-tier Fallback)** | **ĐÃ HOÀN THÀNH** | `0d81571` |
 | **Giai đoạn 4** | **Màn hình Giao diện & Trải nghiệm Tương tác (VoiceCaptureScreen & TicketReviewScreen)** | **ĐÃ HOÀN THÀNH** | `b1c0fea`, `c10c630` |
-| **Giai đoạn 5** | **Xử lý Offline-First & Đồng bộ Dữ liệu (SQLite 'synced'|'pending', Auto-sync ConnectivityService)** | **ĐÃ HOÀN THÀNH** | `88a55fc`, `68f56ec` |
+| **Giai đoạn 5** | **Xử lý Offline-First & Đồng bộ Dữ liệu (SQLite 'synced' / 'pending', Auto-sync ConnectivityService)** | **ĐÃ HOÀN THÀNH** | `88a55fc`, `68f56ec` |
 | **Giai đoạn 6** | **Đóng gói Sản phẩm & Tài liệu Bàn giao (Build Web Release, APK Release, README & AI_WORKLOG)** | **ĐÃ HOÀN THÀNH** | `fef17c3` |
 
 ---
@@ -440,7 +440,7 @@ flutter build apk --release
 | `ec02427` | **Worklog Sync** | `docs: cap nhat toan bo AI_WORKLOG.md giai doan 1-3 va dong bo len git` |
 | `b1c0fea` | **Giai đoạn 4** | `feat(phase-4): hoan thanh man hinh giao dien & trai nghiem tuong tac` |
 | `c10c630` | **Worklog Sync** | `docs: cap nhat ma commit b1c0fea cho giai doan 4 trong AI_WORKLOG.md` |
-| `88a55fc` | **Giai đoạn 5** | `feat(phase-5): xu ly offline-first, luu tru sqlite synced|pending va auto-sync connectivity` |
+| `88a55fc` | **Giai đoạn 5** | `feat(phase-5): xu ly offline-first, luu tru sqlite synced / pending va auto-sync connectivity` |
 | `68f56ec` | **Worklog Sync** | `docs: cap nhat ma commit 88a55fc cho giai doan 5 trong AI_WORKLOG.md` |
 | `fef17c3` | **Giai đoạn 6** | `feat(phase-6): dong goi san pham build web release, apk release va hoan thien tai lieu README AI_WORKLOG` |
 
