@@ -45,10 +45,26 @@ class InspectionLocalDataSourceImpl implements IInspectionLocalDataSource {
               confidence_score REAL,
               raw_transcript TEXT,
               audio_path TEXT,
+              equipment_id TEXT,
+              detected_issues TEXT,
+              required_parts TEXT,
               created_at TEXT NOT NULL,
               updated_at TEXT NOT NULL
             )
           ''');
+        },
+        onUpgrade: (db, oldVersion, newVersion) async {
+          if (oldVersion < 2) {
+            try {
+              await db.execute('ALTER TABLE ${AppConstants.ticketsTable} ADD COLUMN equipment_id TEXT');
+            } catch (_) {}
+            try {
+              await db.execute('ALTER TABLE ${AppConstants.ticketsTable} ADD COLUMN detected_issues TEXT');
+            } catch (_) {}
+            try {
+              await db.execute('ALTER TABLE ${AppConstants.ticketsTable} ADD COLUMN required_parts TEXT');
+            } catch (_) {}
+          }
         },
       );
       return _database;
@@ -102,11 +118,33 @@ class InspectionLocalDataSourceImpl implements IInspectionLocalDataSource {
     try {
       final db = await _getDatabase();
       if (db != null) {
-        await db.insert(
-          AppConstants.ticketsTable,
-          ticket.toMap(),
-          conflictAlgorithm: ConflictAlgorithm.replace,
-        );
+        try {
+          await db.insert(
+            AppConstants.ticketsTable,
+            ticket.toMap(),
+            conflictAlgorithm: ConflictAlgorithm.replace,
+          );
+        } catch (dbError) {
+          // Auto-healing migration if missing columns
+          if (dbError.toString().contains('no column named')) {
+            try {
+              await db.execute('ALTER TABLE ${AppConstants.ticketsTable} ADD COLUMN equipment_id TEXT');
+            } catch (_) {}
+            try {
+              await db.execute('ALTER TABLE ${AppConstants.ticketsTable} ADD COLUMN detected_issues TEXT');
+            } catch (_) {}
+            try {
+              await db.execute('ALTER TABLE ${AppConstants.ticketsTable} ADD COLUMN required_parts TEXT');
+            } catch (_) {}
+            await db.insert(
+              AppConstants.ticketsTable,
+              ticket.toMap(),
+              conflictAlgorithm: ConflictAlgorithm.replace,
+            );
+          } else {
+            rethrow;
+          }
+        }
       } else {
         await _saveToPreferences(ticket);
       }

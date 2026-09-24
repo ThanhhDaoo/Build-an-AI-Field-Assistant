@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:uuid/uuid.dart';
 import '../../domain/entities/inspection_ticket.dart';
 
@@ -16,6 +17,9 @@ class InspectionTicketModel extends InspectionTicket {
     super.confidenceScore,
     super.rawTranscript,
     super.audioPath,
+    super.equipmentId,
+    super.detectedIssues = const [],
+    super.requiredParts = const [],
     required super.createdAt,
     required super.updatedAt,
   });
@@ -35,9 +39,55 @@ class InspectionTicketModel extends InspectionTicket {
       confidenceScore: entity.confidenceScore,
       rawTranscript: entity.rawTranscript,
       audioPath: entity.audioPath,
+      equipmentId: entity.equipmentId,
+      detectedIssues: entity.detectedIssues,
+      requiredParts: entity.requiredParts,
       createdAt: entity.createdAt,
       updatedAt: entity.updatedAt,
     );
+  }
+
+  /// Helper to safely parse detected issues
+  static List<String> _parseIssues(dynamic raw) {
+    if (raw == null) return const [];
+    if (raw is List) {
+      return raw.map((e) => e.toString().trim()).where((e) => e.isNotEmpty).toList();
+    }
+    if (raw is String) {
+      try {
+        final decoded = jsonDecode(raw);
+        if (decoded is List) {
+          return decoded.map((e) => e.toString().trim()).where((e) => e.isNotEmpty).toList();
+        }
+      } catch (_) {
+        return [raw.trim()];
+      }
+    }
+    return const [];
+  }
+
+  /// Helper to safely parse required parts
+  static List<InspectionPart> _parseParts(dynamic raw) {
+    if (raw == null) return const [];
+    if (raw is List) {
+      return raw.map((e) {
+        if (e is Map) {
+          return InspectionPart.fromJson(Map<String, dynamic>.from(e));
+        }
+        return InspectionPart(name: e.toString());
+      }).toList();
+    }
+    if (raw is String) {
+      try {
+        final decoded = jsonDecode(raw);
+        if (decoded is List) {
+          return _parseParts(decoded);
+        }
+      } catch (_) {
+        return [InspectionPart(name: raw.trim())];
+      }
+    }
+    return const [];
   }
 
   /// Create model from JSON (API / Remote DS / Gemini AI Structured Output)
@@ -60,6 +110,9 @@ class InspectionTicketModel extends InspectionTicket {
       confidenceScore: (json['confidence_score'] as num?)?.toDouble() ?? 0.95,
       rawTranscript: rawTranscript ?? json['raw_transcript'] as String?,
       audioPath: audioPath ?? json['audio_path'] as String?,
+      equipmentId: (json['equipment_id'] ?? json['equipmentId']) as String?,
+      detectedIssues: _parseIssues(json['detected_issues'] ?? json['detectedIssues']),
+      requiredParts: _parseParts(json['required_parts'] ?? json['requiredParts']),
       createdAt: json['created_at'] != null
           ? DateTime.parse(json['created_at'] as String)
           : now,
@@ -89,6 +142,9 @@ class InspectionTicketModel extends InspectionTicket {
       confidenceScore: (map['confidence_score'] as num?)?.toDouble() ?? 0.95,
       rawTranscript: rawTranscript,
       audioPath: audioPath,
+      equipmentId: (map['equipment_id'] ?? map['equipmentId']) as String?,
+      detectedIssues: _parseIssues(map['detected_issues'] ?? map['detectedIssues']),
+      requiredParts: _parseParts(map['required_parts'] ?? map['requiredParts']),
       createdAt: now,
       updatedAt: now,
     );
@@ -109,6 +165,9 @@ class InspectionTicketModel extends InspectionTicket {
       'confidence_score': confidenceScore,
       'raw_transcript': rawTranscript,
       'audio_path': audioPath,
+      'equipment_id': equipmentId,
+      'detected_issues': detectedIssues,
+      'required_parts': requiredParts.map((p) => p.toJson()).toList(),
       'created_at': createdAt.toIso8601String(),
       'updated_at': updatedAt.toIso8601String(),
     };
@@ -129,6 +188,9 @@ class InspectionTicketModel extends InspectionTicket {
       confidenceScore: (map['confidence_score'] as num?)?.toDouble() ?? 0.9,
       rawTranscript: map['raw_transcript'] as String?,
       audioPath: map['audio_path'] as String?,
+      equipmentId: map['equipment_id'] as String?,
+      detectedIssues: _parseIssues(map['detected_issues']),
+      requiredParts: _parseParts(map['required_parts']),
       createdAt: DateTime.parse(map['created_at'] as String),
       updatedAt: DateTime.parse(map['updated_at'] as String),
     );
@@ -149,6 +211,9 @@ class InspectionTicketModel extends InspectionTicket {
       'confidence_score': confidenceScore,
       'raw_transcript': rawTranscript,
       'audio_path': audioPath,
+      'equipment_id': equipmentId,
+      'detected_issues': jsonEncode(detectedIssues),
+      'required_parts': jsonEncode(requiredParts.map((p) => p.toJson()).toList()),
       'created_at': createdAt.toIso8601String(),
       'updated_at': updatedAt.toIso8601String(),
     };

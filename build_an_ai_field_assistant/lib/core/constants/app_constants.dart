@@ -7,7 +7,7 @@ class AppConstants {
 
   // Local Storage & Database
   static const String dbName = 'field_ai_assistant.db';
-  static const int dbVersion = 1;
+  static const int dbVersion = 2;
   static const String ticketsTable = 'inspection_tickets';
 
   // Shared Preferences Keys

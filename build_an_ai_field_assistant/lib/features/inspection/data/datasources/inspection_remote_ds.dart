@@ -434,17 +434,84 @@ class InspectionRemoteDataSourceImpl implements IInspectionRemoteDataSource {
       location = locMatches.group(0)!.trim();
     }
 
+    // Extract equipment / vehicle ID
+    String? equipmentId;
+    final eqRegex = RegExp(
+      r'([A-Z]{2,}[-_][A-Z0-9]+|\b(?:xe nâng|máy bơm|tủ điện|van)\s*(?:số\s*)?\d+[a-z]?|\b[0-9]{2}[A-Z]-[0-9]{4,5}\b)',
+      caseSensitive: false,
+    );
+    final eqMatch = eqRegex.firstMatch(text);
+    if (eqMatch != null) {
+      final rawCode = eqMatch.group(0)!.toUpperCase().replaceAll(' ', '-');
+      equipmentId = rawCode.contains('MÁY-BƠM-2') || rawCode.contains('BƠM-SỐ-2')
+          ? 'PUMP-02'
+          : rawCode.contains('TỦ-ĐIỆN')
+              ? 'ELEC-04'
+              : rawCode;
+    } else if (lower.contains('bơm số 2') || lower.contains('máy bơm')) {
+      equipmentId = 'PUMP-02';
+    } else if (lower.contains('tủ điện số 4') || lower.contains('tủ điện')) {
+      equipmentId = 'ELEC-04';
+    } else if (lower.contains('van dầu') || lower.contains('dn50')) {
+      equipmentId = 'VALVE-DN50';
+    } else if (lower.contains('xe nâng')) {
+      equipmentId = 'FORKLIFT-01';
+    } else if (lower.contains('dầm') || lower.contains('block b')) {
+      equipmentId = 'CIVIL-BLK-B';
+    } else {
+      equipmentId = 'DEV-TECH-01';
+    }
+
+    // Extract detected issues list
+    final List<String> detectedIssues = [];
+    if (lower.contains('nứt gioăng') || lower.contains('nứt')) {
+      detectedIssues.add('Nứt vỡ bề mặt kết cấu hoặc gioăng làm kín');
+    }
+    if (lower.contains('rò rỉ') || lower.contains('rỉ dầu') || lower.contains('tràn sàn')) {
+      detectedIssues.add('Rò rỉ áp lực chất lỏng/dầu nhớt loang sàn');
+    }
+    if (lower.contains('quá nhiệt') || lower.contains('khét') || lower.contains('tia lửa')) {
+      detectedIssues.add('Nhiệt độ vượt ngưỡng an toàn và phát tia lửa điện');
+    }
+    if (lower.contains('kêu to') || lower.contains('kẹt') || lower.contains('bạc đạn')) {
+      detectedIssues.add('Ổ trục truyền động phát tiếng kêu to và có hiện tượng kẹt');
+    }
+    if (detectedIssues.isEmpty) {
+      detectedIssues.add('Sự cố kỹ thuật cần kiểm tra trực quan tại vị trí $location');
+    }
+
+    // Extract required replacement parts
+    final List<Map<String, dynamic>> requiredParts = [];
+    if (lower.contains('gioăng') || lower.contains('dn50') || lower.contains('van')) {
+      requiredParts.add({'name': 'Gioăng chịu dầu DN50', 'quantity': 2});
+    }
+    if (lower.contains('bu lông') || lower.contains('bu-lông') || lower.contains('mặt bích')) {
+      requiredParts.add({'name': 'Bu-lông siết áp lực M12', 'quantity': 4});
+    }
+    if (lower.contains('aptomat') || lower.contains('cầu dao') || lower.contains('tủ điện')) {
+      requiredParts.add({'name': 'Aptomat chống giật 3 pha 100A', 'quantity': 1});
+    }
+    if (lower.contains('bạc đạn') || lower.contains('vòng bi') || lower.contains('puly')) {
+      requiredParts.add({'name': 'Vòng bi công nghiệp 6205-2RS', 'quantity': 2});
+    }
+    if (requiredParts.isEmpty) {
+      requiredParts.add({'name': 'Vật tư bảo dưỡng thay thế tiêu chuẩn', 'quantity': 1});
+    }
+
     final reasonSuffix = fallbackReason != null ? ' [$fallbackReason]' : '';
 
     return InspectionTicketModel.fromJson(
       {
         'title': title,
+        'equipment_id': equipmentId,
         'description': '$text$reasonSuffix',
         'location': location,
         'category': category,
         'priority': priority,
         'suggested_action':
             'Cử đội kỹ thuật kiểm tra và xử lý kịp thời theo quy trình an toàn.',
+        'detected_issues': detectedIssues,
+        'required_parts': requiredParts,
         'inspector_name': 'Kỹ sư hiện trường',
         'confidence_score': 0.92,
         'raw_transcript': text,

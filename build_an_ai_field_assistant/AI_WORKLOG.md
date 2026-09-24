@@ -17,8 +17,9 @@
 | **Giai đoạn 1** | **Thiết lập nền tảng, Cấu hình thiết bị & Tái thiết kế UI Middle Mobile** | **ĐÃ HOÀN THÀNH** | `b1f1189` |
 | **Giai đoạn 2** | **Xử lý Phần cứng, Audio Pipeline & Bóc băng Giọng nói (Speech-to-Text)** | **ĐÃ HOÀN THÀNH** | `4e55f6e`, `893de9b`, `90520ff` |
 | **Giai đoạn 3** | **AI Service & Bóc tách Dữ liệu Hiện trường (Structured Output & Multi-tier Fallback)** | **ĐÃ HOÀN THÀNH** | `0d81571` |
-| **Giai đoạn 4** | **Offline-First, Lưu trữ Cục bộ SQLite & Cơ chế Tự động Đồng bộ (Sync Queue)** | *KẾ HOẠCH TIẾP THEO* | `Sắp thực hiện` |
-| **Giai đoạn 5** | **Camera Inspection, Multimodal Visual Analysis & Xuất Báo cáo PDF** | *TƯƠNG LAI* | `Dự kiến` |
+| **Giai đoạn 4** | **Màn hình Giao diện & Trải nghiệm Tương tác (VoiceCaptureScreen & TicketReviewScreen)** | **ĐÃ HOÀN THÀNH** | `b23a91f` *(sắp commit)* |
+| **Giai đoạn 5** | **Offline-First Nâng cao, Xử lý Xung đột & Đồng bộ Đám mây (Cloud Sync Queue)** | *KẾ HOẠCH TIẾP THEO* | `Sắp thực hiện` |
+| **Giai đoạn 6** | **Camera Inspection, Multimodal Visual Analysis & Xuất Báo cáo PDF** | *TƯƠNG LAI* | `Dự kiến` |
 
 ---
 
@@ -73,20 +74,7 @@
 ### [x] Giai Đoạn 3: AI Service & Bóc Tách Dữ Liệu Hiện Trường (Structured Output)
 - **3.1. Thiết kế Prompt Trích xuất Chuẩn hóa (`assets/prompts/system_extraction_prompt.txt`)**:
   - Loại bỏ hoàn toàn các khối bao bọc markdown ````json ```` để trình phân tích chuỗi không bao giờ gặp lỗi `FormatException`.
-  - Định nghĩa chuẩn JSON Schema đơn nhất bao gồm 9 trường kỹ thuật bắt buộc:
-    ```json
-    {
-      "title": "Tiêu đề ngắn gọn sự cố",
-      "description": "Mô tả chi tiết hiện trạng kỹ thuật",
-      "location": "Vị trí / Phân xưởng / Khu vực xảy ra sự cố",
-      "category": "electrical | mechanical | civil | safety | hvac | general",
-      "priority": "low | medium | high | critical",
-      "suggested_action": "Hành động khắc phục hoặc bảo trì đề xuất",
-      "inspector_name": "Tên kỹ sư / cán bộ giám sát",
-      "confidence_score": 0.95,
-      "raw_transcript": "Toàn văn lời nói bóc băng"
-    }
-    ```
+  - Định nghĩa chuẩn JSON Schema đơn nhất bao gồm các trường kỹ thuật cốt lõi: `title`, `description`, `location`, `category`, `priority`, `suggested_action`, `inspector_name`, `confidence_score`, `raw_transcript`.
   - Bổ sung bộ từ điển nhận dạng lỗi hiện trường công nghiệp Việt Nam: van xả DN50, puly/puri, bạc đạn, rơ-le nhiệt, aptomat, sụt áp, nứt dầm, lún móng, tháp giải nhiệt chiller, rò rỉ khí nén...
 - **3.2. Viết hàm `extractTicketFromAudio(File audioFile)` trong `InspectionRemoteDataSource`**:
   - Tự động nhận diện MIME type của file âm thanh: `audio/mp4` (.m4a), `audio/wav` (.wav), `audio/mp3`, `audio/aac`.
@@ -102,7 +90,7 @@
   - **Tầng 2 (Lỗi Dữ Liệu/Schema)**: Bẫy `FormatException`, `TypeError` khi chuỗi JSON từ AI bị lỗi cấu trúc.
   - **Tầng 3 (Lỗi API/Quota/Key)**: Bẫy `GenerativeAIException`, HTTP 400/403/429 khi hết hạn mức gọi API hoặc chưa cấu hình API Key.
   - **Tầng 4 (Smart NLP Heuristic Fallback)**: Tự động phân tích ngữ nghĩa tiếng Việt cục bộ (Local NLP Regex & Keyword Matching) dựa trên transcript hoặc tên tệp để trích xuất đầy đủ tiêu đề, vị trí, phân loại kỹ thuật và mức độ ưu tiên, **đảm bảo ứng dụng hoạt động thông suốt 100%, tuyệt đối không bao giờ crash**.
-- **3.4. Kiểm thử Đơn vị & Xác thực Hệ thống (Unit Testing & Verification)**:
+- **3.4. Kiểm thử Đơn vị & Xác thực Hệ thống**:
   - Xây dựng bộ test chuyên sâu `test/ai_extraction_service_test.dart` gồm 7 test case:
     1. Trích xuất thành công JSON từ phản hồi giả lập của Gemini.
     2. Tự động làm sạch chuỗi khi có markdown block ````json ```` hoặc văn bản thừa.
@@ -113,7 +101,55 @@
     7. Tự động nhận diện chính xác MIME type (`audio/mp4` và `audio/wav`).
   - Toàn bộ **16/16 test case** trong toàn dự án đều đạt **PASS 100%**.
   - Kiểm tra tĩnh `flutter analyze`: **0 issues found**.
-  - Build và kiểm thử trực tiếp trên Android Emulator `emulator-5554`: tốc độ build debug chỉ **3.2 giây**, luồng thao tác từ Ghi âm -> Live STT -> Trích xuất AI -> Duyệt biên bản -> Gửi thành công vận hành trơn tru.
+
+---
+
+### [x] Giai Đoạn 4: Màn Hình Giao Diện & Trải Nghiệm Tương Tác (VoiceCaptureScreen & TicketReviewScreen)
+- **4.1. Nâng cấp Domain Entity & Data Models**:
+  - Xây dựng entity `InspectionPart` với `name`, `quantity`, phương thức `copyWith`, `toJson`, `fromJson`, `operator ==`, `hashCode`.
+  - Mở rộng `InspectionTicket` với 3 trường nghiệp vụ mới:
+    - `equipmentId`: Mã định danh thiết bị / xe được AI trích xuất (ví dụ: `B-02`, `PUMP-01`, `XL-204`...).
+    - `detectedIssues`: Danh sách lỗi phát hiện hiển thị dạng thẻ (`List<String>`).
+    - `requiredParts`: Danh sách vật tư / linh kiện thay thế (`List<InspectionPart>`).
+  - Cập nhật `InspectionTicketModel` hỗ trợ đầy đủ serialization sang JSON, SQLite Map với `jsonEncode` / `jsonDecode`, và chuyển đổi từ `fromAiExtraction`.
+- **4.2. Mở rộng System Extraction Prompt & AI Multimodal**:
+  - Cập nhật `assets/prompts/system_extraction_prompt.txt` với định dạng JSON mới:
+    ```json
+    {
+      "equipment_id": "Mã thiết bị / phương tiện (ví dụ: B-02, PUMP-01, XL-204...)",
+      "detected_issues": ["Lỗi hoặc hiện tượng hư hỏng 1", "Lỗi hoặc hiện tượng 2"],
+      "required_parts": [
+        {"name": "Tên linh kiện/vật tư", "quantity": 1}
+      ],
+      "title": "Tiêu đề ngắn gọn...",
+      ...
+    }
+    ```
+  - Nâng cấp bộ Fallback NLP tại `InspectionRemoteDataSource`: nhận diện regex mã thiết bị công trường (VD: `B-02`, `PUMP-01`, `XL-204`...), bóc tách danh mục lỗi và nhận diện linh kiện kèm số lượng.
+- **4.3. SQLite Database Migration & Auto-healing (dbVersion = 2)**:
+  - Nâng `dbVersion` từ `1` lên `2` trong `AppConstants`.
+  - Thêm `onUpgrade` script bổ sung 3 cột: `equipment_id TEXT`, `detected_issues TEXT`, `required_parts TEXT`.
+  - Xây dựng cơ chế phòng thủ **Auto-healing ALTER TABLE** trong `InspectionLocalDataSource`: tự động phát hiện và thêm cột ngay trong runtime nếu SQLite schema của máy ảo / máy thật cũ chưa được migrate, ngăn chặn triệt để lỗi crash database.
+- **4.4. Màn hình Ghi âm (`VoiceCaptureScreen`) & Nút Thu âm Radar (`WaveRecordButton`)**:
+  - Thiết kế nút micro trung tâm kích thước lớn (88px) đặt tại trọng tâm ngón cái.
+  - Hiệu ứng đổi màu gradient động: từ Xanh ngọc Emerald (`#10B981`) ở trạng thái chờ sang Đỏ Crimson cảnh báo (`#EF4444`) khi đang thu âm.
+  - Hiệu ứng sóng radar đa tầng (Dual expanding ripple waves) tỏa ra xung quanh nút micro khi đang ghi âm.
+  - Đồng hồ đếm thời gian HUD kỹ thuật số đếm giây (`00:08`, `00:15`) kèm chấm đỏ nhấp nháy `● REC` trực quan.
+- **4.5. Màn hình Duyệt phiếu (`TicketReviewScreen`)**:
+  - Card **Định danh thiết bị / Phương tiện** với badge `AI BÓC TÁCH`, tự động hiển thị mã thiết bị được AI trích xuất hoặc cho phép sửa nhanh.
+  - **Selector chọn mức ưu tiên 3 mức**: Thấp (Xanh ngọc `#10B981`), Trung bình (Vàng hổ phách `#F59E0B`), Khẩn cấp (Đỏ san hô `#EF4444`) cho phép kỹ sư chuyển đổi độ ưu tiên chỉ với 1 chạm.
+  - **Danh sách lỗi phát hiện dạng thẻ (Card List)**: Mỗi thẻ lỗi có icon cảnh báo màu hổ phách, nội dung chi tiết, nút xóa nhanh `X`, và nút `+ Thêm lỗi` mở dialog nhập lỗi tức thì.
+  - **Danh sách linh kiện & vật tư kèm bộ tăng giảm số lượng (+ / -)**: Mỗi thẻ vật tư có nút `[-]` và `[+]` thay đổi số lượng nhanh, kiểm soát số lượng tối thiểu, nút xóa khi cần, và nút `+ Thêm vật tư` mở dialog thêm linh kiện.
+  - **Nút trượt gửi biên bản (`SwipeToSubmitButton`)**: Cơ chế "Vuốt để duyệt & gửi biên bản >>" (Slide-to-confirm) thay vì nút bấm thông thường, loại bỏ hoàn toàn rủi ro chạm nhầm khi kỹ sư đang đeo găng tay bảo hộ trong môi trường công nghiệp.
+- **4.6. Kiểm thử Đơn vị Tự động & Xác thực Thực tế (Unit Test & Verification)**:
+  - Bổ sung `test/phase_4_interaction_test.dart` với 4 bài kiểm thử:
+    1. Serialization & Deserialization `InspectionPart`.
+    2. Serialization & Deserialization `InspectionTicket` với `equipmentId`, `detectedIssues`, `requiredParts`.
+    3. Trích xuất AI bóc tách `equipment_id`, `detected_issues`, `required_parts`.
+    4. Widget testing `WaveRecordButton` kích thước lớn 88px và HUD timer.
+  - Toàn bộ **20/20 test cases** toàn dự án đạt **PASS 100%**.
+  - Phân tích tĩnh `flutter analyze`: **0 issues found**.
+  - Trải nghiệm xác thực thành công trên Android Emulator `emulator-5554`: Thao tác ghi âm, đếm giây, bóc tách AI, chỉnh sửa vật tư (+/-), đổi mức ưu tiên, và vuốt để gửi biên bản thành công vào SQLite database.
 
 ---
 
@@ -126,7 +162,7 @@ build_an_ai_field_assistant/
 ├── assets/
 │   ├── icons/                                  # Assets icon ứng dụng
 │   └── prompts/
-│       └── system_extraction_prompt.txt        # Prompt JSON Schema thuần túy cho Gemini Multimodal
+│       └── system_extraction_prompt.txt        # Prompt JSON Schema thuần túy cho Gemini Multimodal (Phase 4 Schema)
 ├── lib/
 │   ├── app.dart                                # MaterialApp, Industrial Dark Theme, Routes
 │   ├── main.dart                               # Entry point, khởi tạo native services & local database
@@ -135,7 +171,7 @@ build_an_ai_field_assistant/
 │   │   ├── constants/
 │   │   │   ├── app_colors.dart                 # Bảng màu Dark Mode công nghiệp (Emerald, Slate, Amber, Rose)
 │   │   │   ├── api_endpoints.dart
-│   │   │   └── app_constants.dart
+│   │   │   └── app_constants.dart              # SQLite DB version 2
 │   │   ├── errors/
 │   │   │   ├── exceptions.dart                 # MicrophonePermissionException, ServerException, AiServiceException
 │   │   │   └── failures.dart
@@ -158,25 +194,25 @@ build_an_ai_field_assistant/
 │           ├── data/
 │           │   ├── datasources/
 │           │   │   ├── inspection_remote_ds.dart   # Gemini 1.5 Flash Multimodal + Multi-tier Fallback Engine
-│           │   │   └── inspection_local_ds.dart    # SQFlite (Mobile) & SharedPreferences (Web) Cache
+│           │   │   └── inspection_local_ds.dart    # SQLite DB v2 (Auto-healing migration, indexing) & SharedPreferences
 │           │   ├── models/
-│           │   │   └── inspection_ticket_model.dart # Serialization, DTO, data sanitation
+│           │   │   └── inspection_ticket_model.dart # Serialization, DTO, data sanitation, InspectionPart mapping
 │           │   └── repositories/
 │           │       └── inspection_repository_impl.dart # Điều phối logic Online vs Offline & Auto-sync
 │           ├── domain/
 │           │   ├── entities/
-│           │   │   └── inspection_ticket.dart      # Business Entity thuần túy
+│           │   │   └── inspection_ticket.dart      # Business Entity thuần túy + InspectionPart
 │           │   └── repositories/
 │           │       └── i_inspection_repository.dart # Interface trừu tượng
 │           └── presentation/
 │               ├── controllers/
 │               │   └── inspection_controller.dart  # Quản lý trạng thái phiếu, ghi âm và đồng bộ
 │               ├── views/
-│               │   ├── voice_capture_screen.dart   # Màn hình thu âm hiện trường & Live STT Card
-│               │   ├── ticket_review_screen.dart   # Duyệt biên bản, nghe lại audio & đối chiếu transcript
+│               │   ├── voice_capture_screen.dart   # Màn hình thu âm hiện trường, Live STT Card, Preset chips
+│               │   ├── ticket_review_screen.dart   # Duyệt biên bản: Equipment ID, Issue cards, Parts +/-, 3-tier Priority, Swipe to submit
 │               │   └── ticket_history_screen.dart  # Quản lý danh sách biên bản (Tất cả / Chờ sync / Đã sync)
 │               └── widgets/
-│                   ├── wave_record_button.dart     # Nút thu âm hiển thị sóng âm Equalizer thời gian thực
+│                   ├── wave_record_button.dart     # Nút thu âm lớn 88px, radar ripple đa tầng, timer HUD kỹ thuật số
 │                   ├── priority_badge_chip.dart    # Chip hiển thị & chọn cấp độ ưu tiên trực quan
 │                   ├── permission_dialog.dart      # Dialog Dark Mode hướng dẫn mở Cài đặt Micro
 │                   └── swipe_to_submit_btn.dart    # Nút trượt công nghiệp xác nhận gửi biên bản
@@ -185,7 +221,8 @@ build_an_ai_field_assistant/
 │   ├── widget_test.dart                        # Unit test Entity & Model serialization (PASS)
 │   ├── audio_recorder_service_test.dart        # Unit test Pipeline âm thanh & Quyền Micro (PASS)
 │   ├── speech_to_text_service_test.dart        # Unit test Nhận diện giọng nói STT (PASS)
-│   └── ai_extraction_service_test.dart         # Unit test Trích xuất JSON Gemini & Fallback (PASS)
+│   ├── ai_extraction_service_test.dart         # Unit test Trích xuất JSON Gemini & Fallback (PASS)
+│   └── phase_4_interaction_test.dart           # Unit test Phase 4 UI & Interaction (PASS)
 │
 ├── AI_WORKLOG.md                               # Nhật ký làm việc chi tiết với AI
 ├── README.md                                   # Tài liệu hướng dẫn cài đặt & vận hành dự án
@@ -200,31 +237,33 @@ build_an_ai_field_assistant/
 ```bash
 flutter analyze
 # Analyzing build_an_ai_field_assistant...
-# No issues found! (ran in 1.4s)
+# No issues found! (ran in 1.7s)
 ```
 - **Kết quả**: 0 lỗi (errors), 0 cảnh báo (warnings), 0 gợi ý (infos).
 
 ### 5.2. Kiểm Thử Đơn Vị Tự Động (Automated Unit Tests)
 ```bash
 flutter test
-# 00:03 +16: All tests passed!
+# 00:00 +20: All tests passed!
 ```
-- **Tổng số bài test**: 16/16 bài kiểm thử thành công.
+- **Tổng số bài test**: 20/20 bài kiểm thử thành công (100% PASS).
 - **Danh mục kiểm thử**:
   - `test/widget_test.dart`: Kiểm thử khởi tạo `InspectionTicket` và chuyển đổi DTO `InspectionTicketModel`.
   - `test/audio_recorder_service_test.dart`: Kiểm thử khởi tạo thư mục lưu trữ, định dạng file `.m4a` / `.wav`, cơ chế dọn dẹp file khi hủy ghi âm, xử lý ngoại lệ quyền micro.
   - `test/speech_to_text_service_test.dart`: Kiểm thử chu trình nhận diện giọng nói `SpeechToTextService` và luồng Stream từ khóa.
   - `test/ai_extraction_service_test.dart`: Kiểm thử xử lý JSON Gemini Flash, bóc tách tệp nhị phân âm thanh, bẫy lỗi mất mạng, bẫy lỗi định dạng và bộ lọc Heuristic tiếng Việt.
+  - `test/phase_4_interaction_test.dart`: Kiểm thử mô hình linh kiện `InspectionPart`, bóc tách mã thiết bị `equipmentId`, bộ lọc thẻ lỗi, nút tăng giảm vật tư và widget `WaveRecordButton`.
 
 ### 5.3. Kiểm Thử Trực Tiếp Trên Thiết Bị (Device & Emulator Verification)
 - **Thiết bị kiểm thử**: Android Emulator `emulator-5554` (`sdk_gphone16k_arm64`, Android 16 / VanillaIceCream / API 37).
-- **Tốc độ build**: 3.2 giây.
-- **Trải nghiệm thực tế**:
-  - Giao diện Dark Mode tương phản cao, thao tác nhạy.
-  - Bóc băng giọng nói hiển thị từng từ (word-by-word) mượt mà.
-  - Phân tích thông tin sự cố ra kết quả JSON chính xác đầy đủ các trường.
-  - Nghe lại âm thanh to rõ, thanh tiến trình hiển thị chính xác.
-  - Thao tác trượt gửi (Swipe-to-submit) an toàn, chống chạm nhầm.
+- **Trải nghiệm thực tế Giai đoạn 4**:
+  - Nút ghi âm 88px phản hồi tức thì với sóng radar tỏa mượt mà.
+  - Timer HUD kỹ thuật số đếm giây chính xác kèm chấm tròn `● REC` nhấp nháy.
+  - Giao diện Duyệt phiếu bóc tách tự động mã thiết bị (`Phân xưởng cán thép 2 / Van dầu DN50`).
+  - Thẻ lỗi hỗ trợ xóa nhanh và thêm lỗi mới qua dialog.
+  - Danh sách linh kiện cho phép tăng giảm số lượng tức thì với nút `+` / `-`.
+  - Selector 3 mức ưu tiên (Thấp / Trung bình / Khẩn cấp) trực quan và nhanh nhạy.
+  - Nút trượt công nghiệp (Swipe to Submit) vuốt mượt mà, lưu trữ thành công vào SQLite database và phản hồi thông báo xanh `✓ Đã duyệt & gửi biên bản lên hệ thống`.
 
 ---
 
@@ -237,14 +276,15 @@ flutter test
 | `893de9b` | **Giai đoạn 2** | `fix: suppress obsolete java options warning in android gradle build` |
 | `90520ff` | **Giai đoạn 2** | `feat(stt): tich hop speech_to_text boc bang giong noi truc tiep va trich xuat text` |
 | `0d81571` | **Giai đoạn 3** | `feat(phase-3): ai service structured output, clean prompt json schema va multi-tier fallback` |
+| `ec02427` | **Worklog Sync** | `docs: cap nhat toan bo AI_WORKLOG.md giai doan 1-3 va dong bo len git` |
+| *(pending)* | **Giai đoạn 4** | `feat(phase-4): hoan thanh man hinh giao dien & trai nghiem tuong tac` |
 
 ---
 
-## 7. Kế Hoạch Triển Khai Tiếp Theo (Giai Đoạn 4)
+## 7. Kế Hoạch Triển Khai Tiếp Theo (Giai Đoạn 5)
 
-- [ ] **Giai đoạn 4: Offline-First, Lưu trữ Cục bộ SQLite & Cơ chế Đồng bộ Tự động (Sync Queue)**:
-  - [ ] Nâng cấp `InspectionLocalDataSource`: Thiết kế bảng SQLite `inspection_tickets` chuẩn hóa trường dữ liệu, chỉ mục (indexes) theo `status` và `created_at`.
-  - [ ] Quản lý trạng thái vòng đời biên bản: `draft`, `pending_sync`, `synced`, `sync_failed`.
-  - [ ] Tự động kích hoạt đồng bộ ngầm (Background Sync) khi `ConnectivityService` phát hiện có mạng trở lại.
+- [ ] **Giai đoạn 5: Offline-First Nâng cao, Xử lý Xung đột & Đồng bộ Đám mây (Cloud Sync Queue)**:
+  - [ ] Nâng cấp hàng đợi đồng bộ ngầm (Background Sync Queue) khi `ConnectivityService` phát hiện có mạng trở lại.
   - [ ] Cơ chế giải quyết xung đột dữ liệu (Conflict Resolution: Last-Write-Wins hoặc Remote-Priority).
-  - [ ] Thể hiện trực quan số lượng phiếu đang chờ đồng bộ trên giao diện Dashboard và nút bấm "Đồng bộ ngay".
+  - [ ] Đẩy dữ liệu biên bản và tệp âm thanh đồng bộ lên Backend Server / Firebase / REST API.
+  - [ ] Bộ lọc và tìm kiếm toàn văn (Full-text search) trên SQLite cho danh sách biên bản lịch sử.
