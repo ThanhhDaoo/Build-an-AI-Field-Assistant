@@ -27,6 +27,19 @@ class AudioRecordingException implements Exception {
   String toString() => 'AudioRecordingException: $message';
 }
 
+class MicrophonePermissionException implements Exception {
+  final String message;
+  final bool isPermanentlyDenied;
+
+  const MicrophonePermissionException([
+    this.message = 'Ứng dụng cần quyền truy cập Microphone để ghi âm biên bản sự cố.',
+    this.isPermanentlyDenied = false,
+  ]);
+
+  @override
+  String toString() => 'MicrophonePermissionException: $message (permanently: $isPermanentlyDenied)';
+}
+
 class NetworkException implements Exception {
   final String message;
 

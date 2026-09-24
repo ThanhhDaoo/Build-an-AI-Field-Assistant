@@ -17,7 +17,16 @@ class CacheFailure extends Failure {
 }
 
 class AudioFailure extends Failure {
-  const AudioFailure([super.message = 'Không thể thu âm hoặc cấp quyền micro']);
+  const AudioFailure([super.message = 'Không thể thu âm hoặc xử lý âm thanh']);
+}
+
+class MicrophonePermissionFailure extends Failure {
+  final bool isPermanentlyDenied;
+
+  const MicrophonePermissionFailure([
+    super.message = 'Chưa cấp quyền truy cập Microphone',
+    this.isPermanentlyDenied = false,
+  ]);
 }
 
 class NetworkFailure extends Failure {

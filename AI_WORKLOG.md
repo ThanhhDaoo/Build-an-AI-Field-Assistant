@@ -17,7 +17,14 @@
   - [x] Xây dựng `AudioPlayerService` & Trình phát lại âm thanh hiện trường trên giao diện Review
   - [x] Tích hợp SDK chính hãng `google_generative_ai` cho Gemini AI
   - [x] Kiểm tra tĩnh `flutter analyze`: **0 lỗi, 0 cảnh báo**; kiểm thử `flutter test`: **Pass 100%**
-- [ ] **Giai đoạn 2**: Tiếp tục các tính năng tiếp theo theo yêu cầu của dự án.
+- [x] **Giai đoạn 2: Xử lý Phần cứng & Audio Pipeline** (ĐÃ HOÀN THÀNH)
+  - [x] Nâng cấp `AudioRecorderService`: Xử lý bắt đầu (`startRecording`), dừng (`stopRecording`), hủy bỏ và xóa tệp tạm (`cancelRecording`).
+  - [x] Hỗ trợ 2 định dạng âm thanh `.m4a` (AAC LC 128kbps, mặc định tiết kiệm 4G) và `.wav` (PCM 16-bit nguyên bản).
+  - [x] Quản lý lưu trữ tệp tại `getApplicationDocumentsDirectory()` bên trong thư mục `/app_recordings/` an toàn, chống bị hệ điều hành xóa cache ngẫu nhiên.
+  - [x] Tích hợp `permission_handler`, bắt ngoại lệ `MicrophonePermissionException` (hỗ trợ cờ `isPermanentlyDenied`).
+  - [x] Xây dựng `MicrophonePermissionDialog` phong cách Industrial Dark Mode có nút bấm trực tiếp mở Cài đặt hệ thống (`openAppSettings`).
+  - [x] Bộ kiểm thử đơn vị `test/audio_recorder_service_test.dart` đạt **Pass 100%**; kiểm tra tĩnh `flutter analyze`: **0 issues**.
+- [ ] **Giai đoạn 3**: Tiếp tục các tính năng tiếp theo theo yêu cầu của dự án.
 ```
 field_ai_assistant/
 ├── android/                                    # Cấu hình Android native (Permissions: RECORD_AUDIO, INTERNET)

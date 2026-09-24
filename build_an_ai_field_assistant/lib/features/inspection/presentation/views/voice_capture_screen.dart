@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import '../../../../core/constants/app_colors.dart';
+import '../../../../core/errors/exceptions.dart';
+import '../../../../core/utils/dialog_helper.dart';
 import '../controllers/inspection_controller.dart';
+import '../widgets/permission_dialog.dart';
 import '../widgets/wave_record_button.dart';
 import 'ticket_review_screen.dart';
 
@@ -151,11 +154,45 @@ class _VoiceCaptureScreenState extends State<VoiceCaptureScreen> {
     );
   }
 
+  Future<void> _onRecordTap(InspectionController ctrl) async {
+    if (ctrl.isRecording) {
+      final ticket = await ctrl.stopRecordingAndExtract();
+      if (!mounted) return;
+      if (ticket != null) {
+        Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (_) => TicketReviewScreen(
+              controller: ctrl,
+              initialTicket: ticket,
+            ),
+          ),
+        );
+      }
+    } else {
+      try {
+        await ctrl.startRecording();
+      } on MicrophonePermissionException catch (e) {
+        if (!mounted) return;
+        MicrophonePermissionDialog.show(
+          context,
+          isPermanentlyDenied: e.isPermanentlyDenied,
+        );
+      } catch (e) {
+        if (!mounted) return;
+        DialogHelper.showSnackBar(
+          context,
+          'Không thể khởi động ghi âm: $e',
+          isError: true,
+        );
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return ListenableBuilder(
       listenable: widget.controller,
-      builder: (context, _) {
+      builder: (_, child) {
         final ctrl = widget.controller;
 
         return Scaffold(
@@ -236,24 +273,7 @@ class _VoiceCaptureScreenState extends State<VoiceCaptureScreen> {
                       amplitude: ctrl.currentAmplitude,
                       duration: ctrl.recordDuration,
                       onCancel: () => ctrl.cancelRecording(),
-                      onTap: () async {
-                        if (ctrl.isRecording) {
-                          final ticket = await ctrl.stopRecordingAndExtract();
-                          if (!context.mounted) return;
-                          if (ticket != null) {
-                            Navigator.of(context).push(
-                              MaterialPageRoute(
-                                builder: (_) => TicketReviewScreen(
-                                  controller: ctrl,
-                                  initialTicket: ticket,
-                                ),
-                              ),
-                            );
-                          }
-                        } else {
-                          await ctrl.startRecording();
-                        }
-                      },
+                      onTap: () => _onRecordTap(ctrl),
                     ),
                   ),
 

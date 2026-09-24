@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/foundation.dart';
+import '../../../../core/errors/exceptions.dart';
 import '../../../../core/services/audio_recorder_service.dart';
 import '../../../../core/services/connectivity_service.dart';
 import '../../domain/entities/inspection_ticket.dart';
@@ -119,17 +120,23 @@ class InspectionController extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// Start Recording Voice Note
-  Future<void> startRecording() async {
+  /// Start Recording Voice Note (.m4a or .wav)
+  Future<void> startRecording({AudioOutputFormat format = AudioOutputFormat.m4a}) async {
     _errorMessage = null;
     try {
-      await audioRecorderService.startRecording();
+      await audioRecorderService.startRecording(format: format);
       _state = InspectionViewState.recording;
       notifyListeners();
+    } on MicrophonePermissionException catch (e) {
+      _errorMessage = e.message;
+      _state = InspectionViewState.idle;
+      notifyListeners();
+      rethrow;
     } catch (e) {
       _errorMessage = e.toString();
       _state = InspectionViewState.error;
       notifyListeners();
+      rethrow;
     }
   }
 
