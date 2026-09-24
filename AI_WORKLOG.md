@@ -18,7 +18,7 @@
 | **Giai đoạn 2** | **Xử lý Phần cứng, Audio Pipeline & Bóc băng Giọng nói (Speech-to-Text)** | **ĐÃ HOÀN THÀNH** | `4e55f6e`, `893de9b`, `90520ff` |
 | **Giai đoạn 3** | **AI Service & Bóc tách Dữ liệu Hiện trường (Structured Output & Multi-tier Fallback)** | **ĐÃ HOÀN THÀNH** | `0d81571` |
 | **Giai đoạn 4** | **Màn hình Giao diện & Trải nghiệm Tương tác (VoiceCaptureScreen & TicketReviewScreen)** | **ĐÃ HOÀN THÀNH** | `b1c0fea`, `c10c630` |
-| **Giai đoạn 5** | **Xử lý Offline-First & Đồng bộ Dữ liệu (SQLite 'synced'|'pending', Auto-sync ConnectivityService)** | **ĐÃ HOÀN THÀNH** | `984cfb0` *(sắp commit)* |
+| **Giai đoạn 5** | **Xử lý Offline-First & Đồng bộ Dữ liệu (SQLite 'synced'|'pending', Auto-sync ConnectivityService)** | **ĐÃ HOÀN THÀNH** | `88a55fc` |
 | **Giai đoạn 6** | **Camera Inspection, Multimodal Visual Analysis & Xuất Báo cáo PDF** | *KẾ HOẠCH TIẾP THEO* | `Dự kiến` |
 
 ---
@@ -317,7 +317,7 @@ flutter test
 | `ec02427` | **Worklog Sync** | `docs: cap nhat toan bo AI_WORKLOG.md giai doan 1-3 va dong bo len git` |
 | `b1c0fea` | **Giai đoạn 4** | `feat(phase-4): hoan thanh man hinh giao dien & trai nghiem tuong tac` |
 | `c10c630` | **Worklog Sync** | `docs: cap nhat ma commit b1c0fea cho giai doan 4 trong AI_WORKLOG.md` |
-| *(pending)* | **Giai đoạn 5** | `feat(phase-5): xu ly offline-first, luu tru sqlite synced|pending va auto-sync connectivity` |
+| `88a55fc` | **Giai đoạn 5** | `feat(phase-5): xu ly offline-first, luu tru sqlite synced|pending va auto-sync connectivity` |
 
 ---
 
