@@ -1,30 +1,25 @@
-// This is a basic Flutter widget test.
-//
-// To perform an interaction with a widget in your test, use the WidgetTester
-// utility in the flutter_test package. For example, you can send tap and scroll
-// gestures. You can also use WidgetTester to find child widgets in the widget
-// tree, read text, and verify that the values of widget properties are correct.
-
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-
-import 'package:build_an_ai_field_assistant/main.dart';
+import 'package:build_an_ai_field_assistant/features/inspection/domain/entities/inspection_ticket.dart';
 
 void main() {
-  testWidgets('Counter increments smoke test', (WidgetTester tester) async {
-    // Build our app and trigger a frame.
-    await tester.pumpWidget(const MyApp());
+  test('InspectionTicket creation test', () {
+    final now = DateTime.now();
+    final ticket = InspectionTicket(
+      id: 'test-123',
+      title: 'Kiểm tra van điều áp',
+      description: 'Mô tả chi tiết sự cố rò rỉ',
+      location: 'Phân xưởng cán thép số 2',
+      category: 'mechanical',
+      priority: 'high',
+      status: 'pending_sync',
+      suggestedAction: 'Thay van DN50',
+      createdAt: now,
+      updatedAt: now,
+    );
 
-    // Verify that our counter starts at 0.
-    expect(find.text('0'), findsOneWidget);
-    expect(find.text('1'), findsNothing);
-
-    // Tap the '+' icon and trigger a frame.
-    await tester.tap(find.byIcon(Icons.add));
-    await tester.pump();
-
-    // Verify that our counter has incremented.
-    expect(find.text('0'), findsNothing);
-    expect(find.text('1'), findsOneWidget);
+    expect(ticket.id, 'test-123');
+    expect(ticket.isPendingSync, true);
+    expect(ticket.isSynced, false);
+    expect(ticket.priority, 'high');
   });
 }
