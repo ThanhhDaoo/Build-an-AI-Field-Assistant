@@ -147,13 +147,9 @@ class InspectionController extends ChangeNotifier {
       _state = InspectionViewState.analyzing;
       notifyListeners();
 
-      // Use simulated or captured voice transcript
-      final speechText = mockSpeechText ??
-          'Phát hiện van áp suất cao tại tháp làm mát B bị rò rỉ nước áp lực mạnh, nguy cơ chập hệ thống bơm. Cần thợ cơ điện ngắt van cách ly và thay gioăng chịu nhiệt gấp.';
-
       final extractedTicket = await repository.extractTicketFromVoice(
         audioPath: audioPath ?? '',
-        audioTranscript: speechText,
+        audioTranscript: mockSpeechText,
       );
 
       _currentDraftTicket = extractedTicket;

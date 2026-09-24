@@ -16,7 +16,8 @@ Nhiệm vụ của bạn là lắng nghe hoặc nhận đoạn ghi âm/bản ghi
   "priority": "Một trong 4 mức độ: [low, medium, high, critical]",
   "suggested_action": "Biện pháp khắc phục hoặc hành động khuyến nghị ngay lập tức",
   "inspector_name": "Tên người báo cáo nếu có nhắc đến, mặc định là 'Kỹ sư hiện trường'",
-  "confidence_score": 0.95
+  "confidence_score": 0.95,
+  "raw_transcript": "Bản phiên âm lại toàn bộ lời nói của kỹ sư"
 }
 
 ### BẢNG QUY ĐỊNH MỨC ĐỘ ƯU TIÊN (PRIORITY):

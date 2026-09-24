@@ -41,8 +41,19 @@ class InspectionRepositoryImpl implements IInspectionRepository {
     required String audioPath,
     String? audioTranscript,
   }) async {
-    final transcript = audioTranscript ??
-        'Ghi âm hiện trường tại địa điểm kiểm tra. Phát hiện sự cố cần xử lý khẩn cấp.';
+    final apiKey = await _getSavedApiKey();
+
+    // If real audio file is present and no manual transcript was provided, use Gemini Multimodal Audio analysis
+    if (audioPath.isNotEmpty && (audioTranscript == null || audioTranscript.trim().isEmpty)) {
+      return await remoteDataSource.extractTicketFromAudio(
+        audioPath: audioPath,
+        apiKey: apiKey,
+      );
+    }
+
+    final transcript = (audioTranscript != null && audioTranscript.trim().isNotEmpty)
+        ? audioTranscript
+        : 'Ghi âm hiện trường tại địa điểm kiểm tra.';
     return extractTicketFromText(transcript, audioPath: audioPath);
   }
 
