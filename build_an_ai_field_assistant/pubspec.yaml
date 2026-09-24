@@ -44,6 +44,11 @@ dependencies:
   path: ^1.9.1
   path_provider: ^2.1.6
   google_fonts: ^8.2.1
+  flutter_svg: ^2.3.0
+  audioplayers: ^6.8.1
+  flutter_bloc: ^9.1.1
+  get_it: ^9.3.0
+  google_generative_ai: ^0.4.7
 
 dev_dependencies:
   flutter_test:

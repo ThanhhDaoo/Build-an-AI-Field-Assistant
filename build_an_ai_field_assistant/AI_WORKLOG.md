@@ -4,11 +4,20 @@
 - **Tên dự án**: Field AI Assistant (Trợ lý Giám sát Hiện trường AI)
 - **Mục tiêu**: Xây dựng ứng dụng di động & web cho kỹ sư / cán bộ giám sát tại công trường, nhà máy, xí nghiệp; cho phép ghi âm mô tả sự cố bằng giọng nói, sử dụng **Gemini AI** trích xuất tự động thành phiếu biên bản kiểm tra chuẩn hóa JSON, lưu trữ dữ liệu ngoại tuyến (Offline-first) và tự động đồng bộ khi có kết nối mạng.
 - **Nền tảng mục tiêu**: Flutter (Android, iOS, Web Demo cho Vercel/Firebase, Desktop).
-- **Kiến trúc ứng dụng**: Clean Architecture (Domain, Data, Presentation) kết hợp State Management phản ứng nhanh (`ChangeNotifier` / `ListenableBuilder`).
+- **Kiến trúc ứng dụng**: Clean Architecture (Domain, Data, Presentation) kết hợp Service Locator (`get_it`) và State Management phản ứng nhanh (`ChangeNotifier` / `flutter_bloc`).
 
 ---
 
-## 2. Cấu trúc Thư mục Dự án Đã Thiết lập
+## 2. Tiến Độ Các Giai Đoạn (Project Milestones)
+- [x] **Giai đoạn 1: Thiết lập nền tảng & Cấu hình thiết bị** (ĐÃ HOÀN THÀNH)
+  - [x] Cấu hình hỗ trợ đồng thời Android và Web
+  - [x] Tích hợp bộ thư viện cốt lõi (`flutter_svg`, `intl`, `record`, `audioplayers`, `get_it`, `flutter_bloc`, `http`, `google_generative_ai`, `sqflite`)
+  - [x] Chuẩn hóa quyền truy cập Micro (`RECORD_AUDIO`, `INTERNET`, `ACCESS_NETWORK_STATE`, microphone feature)
+  - [x] Thiết lập Service Locator (`lib/core/di/injection_container.dart`)
+  - [x] Xây dựng `AudioPlayerService` & Trình phát lại âm thanh hiện trường trên giao diện Review
+  - [x] Tích hợp SDK chính hãng `google_generative_ai` cho Gemini AI
+  - [x] Kiểm tra tĩnh `flutter analyze`: **0 lỗi, 0 cảnh báo**; kiểm thử `flutter test`: **Pass 100%**
+- [ ] **Giai đoạn 2**: Tiếp tục các tính năng tiếp theo theo yêu cầu của dự án.
 ```
 field_ai_assistant/
 ├── android/                                    # Cấu hình Android native (Permissions: RECORD_AUDIO, INTERNET)

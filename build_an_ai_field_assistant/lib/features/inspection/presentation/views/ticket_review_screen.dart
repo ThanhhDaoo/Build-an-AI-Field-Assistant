@@ -1,6 +1,11 @@
+import 'dart:async';
+import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/material.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_constants.dart';
+import '../../../../core/di/injection_container.dart';
+import '../../../../core/services/audio_player_service.dart';
+import '../../../../core/utils/date_formatter.dart';
 import '../../../../core/utils/dialog_helper.dart';
 import '../../domain/entities/inspection_ticket.dart';
 import '../controllers/inspection_controller.dart';
@@ -316,6 +321,13 @@ class _TicketReviewScreenState extends State<TicketReviewScreen> {
 
               const SizedBox(height: 20),
 
+              // Audio Playback Preview (if audio was recorded)
+              if (widget.initialTicket.audioPath != null &&
+                  widget.initialTicket.audioPath!.isNotEmpty) ...[
+                _AudioPlaybackCard(audioPath: widget.initialTicket.audioPath!),
+                const SizedBox(height: 16),
+              ],
+
               // Original Voice Transcript Expansion (if available)
               if (widget.initialTicket.rawTranscript != null &&
                   widget.initialTicket.rawTranscript!.isNotEmpty) ...[
@@ -408,3 +420,114 @@ class _TicketReviewScreenState extends State<TicketReviewScreen> {
     );
   }
 }
+
+/// Internal Audio Playback Card for listening to captured field audio
+class _AudioPlaybackCard extends StatefulWidget {
+  final String audioPath;
+
+  const _AudioPlaybackCard({required this.audioPath});
+
+  @override
+  State<_AudioPlaybackCard> createState() => _AudioPlaybackCardState();
+}
+
+class _AudioPlaybackCardState extends State<_AudioPlaybackCard> {
+  late final AudioPlayerService _playerService;
+  bool _isPlaying = false;
+  Duration _position = Duration.zero;
+  Duration _duration = Duration.zero;
+
+  StreamSubscription<PlayerState>? _stateSub;
+  StreamSubscription<Duration>? _posSub;
+  StreamSubscription<Duration>? _durSub;
+
+  @override
+  void initState() {
+    super.initState();
+    _playerService = sl<AudioPlayerService>();
+
+    _stateSub = _playerService.onPlayerStateChanged.listen((state) {
+      if (mounted) {
+        setState(() => _isPlaying = state == PlayerState.playing);
+      }
+    });
+
+    _posSub = _playerService.onPositionChanged.listen((pos) {
+      if (mounted) {
+        setState(() => _position = pos);
+      }
+    });
+
+    _durSub = _playerService.onDurationChanged.listen((dur) {
+      if (mounted) {
+        setState(() => _duration = dur);
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _stateSub?.cancel();
+    _posSub?.cancel();
+    _durSub?.cancel();
+    _playerService.stop();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: AppColors.primary.withValues(alpha: 0.3)),
+      ),
+      child: Row(
+        children: [
+          IconButton(
+            onPressed: () {
+              if (_isPlaying) {
+                _playerService.pause();
+              } else {
+                _playerService.play(widget.audioPath);
+              }
+            },
+            icon: Icon(
+              _isPlaying
+                  ? Icons.pause_circle_filled_rounded
+                  : Icons.play_circle_fill_rounded,
+              color: AppColors.primary,
+              size: 36,
+            ),
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Bản ghi âm giọng nói hiện trường',
+                  style: TextStyle(
+                    color: AppColors.textPrimary,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  '${DateFormatter.formatDuration(_position)} / ${DateFormatter.formatDuration(_duration)}',
+                  style: const TextStyle(
+                    color: AppColors.textMuted,
+                    fontSize: 11,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+

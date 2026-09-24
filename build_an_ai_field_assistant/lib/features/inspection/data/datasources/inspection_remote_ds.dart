@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:flutter/services.dart';
+import 'package:google_generative_ai/google_generative_ai.dart' hide ServerException;
 import '../../../../core/constants/api_endpoints.dart';
 import '../../../../core/constants/app_constants.dart';
 import '../../../../core/errors/exceptions.dart';
@@ -17,11 +18,11 @@ abstract class IInspectionRemoteDataSource {
 }
 
 class InspectionRemoteDataSourceImpl implements IInspectionRemoteDataSource {
-  final ApiClient _apiClient;
+  final ApiClient apiClient;
   String? _cachedSystemPrompt;
 
   InspectionRemoteDataSourceImpl({ApiClient? apiClient})
-      : _apiClient = apiClient ?? ApiClient();
+      : apiClient = apiClient ?? ApiClient();
 
   /// Load system extraction prompt from assets
   Future<String> _getSystemPrompt() async {
@@ -48,37 +49,26 @@ class InspectionRemoteDataSourceImpl implements IInspectionRemoteDataSource {
 
     try {
       final systemPrompt = await _getSystemPrompt();
-      final url = ApiEndpoints.geminiGenerateUrl(apiKey.trim());
 
-      final payload = {
-        'contents': [
-          {
-            'role': 'user',
-            'parts': [
-              {
-                'text':
-                    '$systemPrompt\n\nNỘI DUNG GHI ÂM/BẢN GHI HIỆN TRƯỜNG CỦA KỸ SƯ:\n"$text"'
-              }
-            ]
-          }
-        ],
-        'generationConfig': {
-          'temperature': 0.1,
-          'responseMimeType': 'application/json',
-        }
-      };
+      // Use official Google Generative AI SDK
+      final model = GenerativeModel(
+        model: ApiEndpoints.geminiModel,
+        apiKey: apiKey.trim(),
+        generationConfig: GenerationConfig(
+          temperature: 0.1,
+          responseMimeType: 'application/json',
+        ),
+        systemInstruction: Content.system(systemPrompt),
+      );
 
-      final response = await _apiClient.postJson(url: url, body: payload);
+      final response = await model.generateContent([
+        Content.text('NỘI DUNG GHI ÂM/BẢN GHI HIỆN TRƯỜNG CỦA KỸ SƯ:\n"$text"'),
+      ]);
 
-      // Parse Gemini response
-      final candidates = response['candidates'] as List?;
-      if (candidates == null || candidates.isEmpty) {
+      final textResponse = response.text;
+      if (textResponse == null || textResponse.trim().isEmpty) {
         throw const AiExtractionException('Gemini không phản hồi kết quả');
       }
-
-      final content = candidates[0]['content'];
-      final parts = content['parts'] as List;
-      final textResponse = parts[0]['text'] as String;
 
       // Clean JSON string
       String cleanJson = textResponse.trim();
