@@ -40,27 +40,32 @@ class InspectionTicketModel extends InspectionTicket {
     );
   }
 
-  /// Create model from JSON (API / Remote DS)
-  factory InspectionTicketModel.fromJson(Map<String, dynamic> json) {
+  /// Create model from JSON (API / Remote DS / Gemini AI Structured Output)
+  factory InspectionTicketModel.fromJson(
+    Map<String, dynamic> json, {
+    String? rawTranscript,
+    String? audioPath,
+  }) {
+    final now = DateTime.now();
     return InspectionTicketModel(
       id: json['id'] as String? ?? const Uuid().v4(),
-      title: json['title'] as String? ?? 'Biên bản kiểm tra chưa đặt tên',
+      title: json['title'] as String? ?? 'Biên bản kiểm tra hiện trường',
       description: json['description'] as String? ?? '',
       location: json['location'] as String? ?? 'Chưa xác định vị trí',
-      category: json['category'] as String? ?? 'general',
-      priority: json['priority'] as String? ?? 'medium',
+      category: (json['category'] as String? ?? 'general').toLowerCase(),
+      priority: (json['priority'] as String? ?? 'medium').toLowerCase(),
       status: json['status'] as String? ?? 'pending_sync',
       suggestedAction: json['suggested_action'] as String? ?? '',
       inspectorName: json['inspector_name'] as String? ?? 'Kỹ sư hiện trường',
-      confidenceScore: (json['confidence_score'] as num?)?.toDouble() ?? 0.9,
-      rawTranscript: json['raw_transcript'] as String?,
-      audioPath: json['audio_path'] as String?,
+      confidenceScore: (json['confidence_score'] as num?)?.toDouble() ?? 0.95,
+      rawTranscript: rawTranscript ?? json['raw_transcript'] as String?,
+      audioPath: audioPath ?? json['audio_path'] as String?,
       createdAt: json['created_at'] != null
           ? DateTime.parse(json['created_at'] as String)
-          : DateTime.now(),
+          : now,
       updatedAt: json['updated_at'] != null
           ? DateTime.parse(json['updated_at'] as String)
-          : DateTime.now(),
+          : now,
     );
   }
 
