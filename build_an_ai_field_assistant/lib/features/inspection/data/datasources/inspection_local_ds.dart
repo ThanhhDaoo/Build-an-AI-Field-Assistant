@@ -99,14 +99,17 @@ class InspectionLocalDataSourceImpl implements IInspectionLocalDataSource {
       if (db != null) {
         final List<Map<String, dynamic>> maps = await db.query(
           AppConstants.ticketsTable,
-          where: 'status = ?',
-          whereArgs: ['pending_sync'],
+          where: 'status = ? OR status = ?',
+          whereArgs: ['pending', 'pending_sync'],
           orderBy: 'created_at ASC',
         );
         return maps.map((map) => InspectionTicketModel.fromMap(map)).toList();
       } else {
         final list = await _getFromPreferences();
-        return list.where((ticket) => ticket.status == 'pending_sync').toList();
+        return list
+            .where((ticket) =>
+                ticket.status == 'pending' || ticket.status == 'pending_sync')
+            .toList();
       }
     } catch (e) {
       throw CacheException('Không thể lấy danh sách phiếu chờ đồng bộ: $e');
@@ -262,7 +265,7 @@ class InspectionLocalDataSourceImpl implements IInspectionLocalDataSource {
         location: 'Tủ điện số 4, cạnh Kho vật tư',
         category: 'electrical',
         priority: 'critical',
-        status: 'pending_sync',
+        status: 'pending',
         suggestedAction: 'Cắt cầu dao tổng ngay lập tức và phân công đội cơ điện xử lý.',
         inspectorName: 'Kỹ sư Tuấn Anh',
         confidenceScore: 0.99,

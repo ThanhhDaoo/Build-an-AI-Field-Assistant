@@ -16,6 +16,7 @@ class InspectionRepositoryImpl implements IInspectionRepository {
   final ConnectivityService connectivityService;
 
   final _ticketsStreamController = StreamController<List<InspectionTicket>>.broadcast();
+  StreamSubscription<bool>? _connectivitySubscription;
 
   InspectionRepositoryImpl({
     required this.remoteDataSource,
@@ -23,7 +24,7 @@ class InspectionRepositoryImpl implements IInspectionRepository {
     required this.connectivityService,
   }) {
     // Automatically trigger sync when network is restored
-    connectivityService.onConnectivityChanged.listen((isOnline) {
+    _connectivitySubscription = connectivityService.onConnectivityChanged.listen((isOnline) {
       if (isOnline) {
         debugPrint('Network restored: Triggering auto-sync for pending tickets...');
         syncPendingTickets();
@@ -98,16 +99,20 @@ class InspectionRepositoryImpl implements IInspectionRepository {
           model = InspectionTicketModel.fromEntity(
             model.copyWith(status: 'synced', updatedAt: DateTime.now()),
           );
+        } else {
+          model = InspectionTicketModel.fromEntity(
+            model.copyWith(status: 'pending', updatedAt: DateTime.now()),
+          );
         }
       } catch (e) {
         debugPrint('Immediate sync failed, queued for later: $e');
         model = InspectionTicketModel.fromEntity(
-          model.copyWith(status: 'pending_sync', updatedAt: DateTime.now()),
+          model.copyWith(status: 'pending', updatedAt: DateTime.now()),
         );
       }
     } else {
       model = InspectionTicketModel.fromEntity(
-        model.copyWith(status: 'pending_sync', updatedAt: DateTime.now()),
+        model.copyWith(status: 'pending', updatedAt: DateTime.now()),
       );
     }
 
@@ -127,6 +132,8 @@ class InspectionRepositoryImpl implements IInspectionRepository {
     if (!connectivityService.isOnline) return 0;
 
     final pendingList = await localDataSource.getPendingTickets();
+    if (pendingList.isEmpty) return 0;
+
     int syncedCount = 0;
 
     for (final ticket in pendingList) {
@@ -155,6 +162,7 @@ class InspectionRepositoryImpl implements IInspectionRepository {
   }
 
   void dispose() {
+    _connectivitySubscription?.cancel();
     _ticketsStreamController.close();
   }
 }

@@ -17,9 +17,9 @@
 | **Giai đoạn 1** | **Thiết lập nền tảng, Cấu hình thiết bị & Tái thiết kế UI Middle Mobile** | **ĐÃ HOÀN THÀNH** | `b1f1189` |
 | **Giai đoạn 2** | **Xử lý Phần cứng, Audio Pipeline & Bóc băng Giọng nói (Speech-to-Text)** | **ĐÃ HOÀN THÀNH** | `4e55f6e`, `893de9b`, `90520ff` |
 | **Giai đoạn 3** | **AI Service & Bóc tách Dữ liệu Hiện trường (Structured Output & Multi-tier Fallback)** | **ĐÃ HOÀN THÀNH** | `0d81571` |
-| **Giai đoạn 4** | **Màn hình Giao diện & Trải nghiệm Tương tác (VoiceCaptureScreen & TicketReviewScreen)** | **ĐÃ HOÀN THÀNH** | `b1c0fea` |
-| **Giai đoạn 5** | **Offline-First Nâng cao, Xử lý Xung đột & Đồng bộ Đám mây (Cloud Sync Queue)** | *KẾ HOẠCH TIẾP THEO* | `Sắp thực hiện` |
-| **Giai đoạn 6** | **Camera Inspection, Multimodal Visual Analysis & Xuất Báo cáo PDF** | *TƯƠNG LAI* | `Dự kiến` |
+| **Giai đoạn 4** | **Màn hình Giao diện & Trải nghiệm Tương tác (VoiceCaptureScreen & TicketReviewScreen)** | **ĐÃ HOÀN THÀNH** | `b1c0fea`, `c10c630` |
+| **Giai đoạn 5** | **Xử lý Offline-First & Đồng bộ Dữ liệu (SQLite 'synced'|'pending', Auto-sync ConnectivityService)** | **ĐÃ HOÀN THÀNH** | `984cfb0` *(sắp commit)* |
+| **Giai đoạn 6** | **Camera Inspection, Multimodal Visual Analysis & Xuất Báo cáo PDF** | *KẾ HOẠCH TIẾP THEO* | `Dự kiến` |
 
 ---
 
@@ -113,18 +113,7 @@
     - `requiredParts`: Danh sách vật tư / linh kiện thay thế (`List<InspectionPart>`).
   - Cập nhật `InspectionTicketModel` hỗ trợ đầy đủ serialization sang JSON, SQLite Map với `jsonEncode` / `jsonDecode`, và chuyển đổi từ `fromAiExtraction`.
 - **4.2. Mở rộng System Extraction Prompt & AI Multimodal**:
-  - Cập nhật `assets/prompts/system_extraction_prompt.txt` với định dạng JSON mới:
-    ```json
-    {
-      "equipment_id": "Mã thiết bị / phương tiện (ví dụ: B-02, PUMP-01, XL-204...)",
-      "detected_issues": ["Lỗi hoặc hiện tượng hư hỏng 1", "Lỗi hoặc hiện tượng 2"],
-      "required_parts": [
-        {"name": "Tên linh kiện/vật tư", "quantity": 1}
-      ],
-      "title": "Tiêu đề ngắn gọn...",
-      ...
-    }
-    ```
+  - Cập nhật `assets/prompts/system_extraction_prompt.txt` với schema chuẩn hóa JSON chứa `equipment_id`, `detected_issues`, `required_parts`.
   - Nâng cấp bộ Fallback NLP tại `InspectionRemoteDataSource`: nhận diện regex mã thiết bị công trường (VD: `B-02`, `PUMP-01`, `XL-204`...), bóc tách danh mục lỗi và nhận diện linh kiện kèm số lượng.
 - **4.3. SQLite Database Migration & Auto-healing (dbVersion = 2)**:
   - Nâng `dbVersion` từ `1` lên `2` trong `AppConstants`.
@@ -149,7 +138,56 @@
     4. Widget testing `WaveRecordButton` kích thước lớn 88px và HUD timer.
   - Toàn bộ **20/20 test cases** toàn dự án đạt **PASS 100%**.
   - Phân tích tĩnh `flutter analyze`: **0 issues found**.
-  - Trải nghiệm xác thực thành công trên Android Emulator `emulator-5554`: Thao tác ghi âm, đếm giây, bóc tách AI, chỉnh sửa vật tư (+/-), đổi mức ưu tiên, và vuốt để gửi biên bản thành công vào SQLite database.
+
+---
+
+### [x] Giai Đoạn 5: Xử Lý Offline-First & Đồng Bộ Dữ Liệu (SQLite Status & Auto-sync Pipeline)
+- **5.1. Khởi tạo & Chuẩn hóa SQLite `inspection_tickets`**:
+  - Cột `status` trong SQLite table được chuẩn hóa hỗ trợ hai trạng thái cốt lõi:
+    - `'synced'`: Đã gửi và lưu trữ an toàn trên server trung tâm.
+    - `'pending'`: Đang chờ đồng bộ do thiết bị ngoại tuyến hoặc server bảo trì (vẫn tương thích ngược hoàn hảo với `'pending_sync'`).
+  - Getter tiện ích tại `InspectionTicket`:
+    - `bool get isSynced => status == 'synced';`
+    - `bool get isPendingSync => status == 'pending' || status == 'pending_sync';`
+  - Nâng cấp `getPendingTickets()` trong `InspectionLocalDataSource`: truy vấn `WHERE status = 'pending' OR status = 'pending_sync' ORDER BY created_at ASC`.
+  - Cập nhật `markTicketAsSynced(id)`: chuyển đổi trạng thái bản ghi thành `'synced'` và cập nhật mốc thời gian `updated_at`.
+- **5.2. Hoàn thiện Logic Điều phối trong `InspectionRepositoryImpl`**:
+  - **Khi có mạng (`connectivityService.isOnline == true`)**:
+    - Gọi `remoteDataSource.syncTicketToRemote(model)` gửi dữ liệu lên server.
+    - Khi server phản hồi thành công: gán `status: 'synced'`.
+    - Khi server lỗi / timeout: bẫy ngoại lệ phòng vệ, tự động gán `status: 'pending'` để không làm gián đoạn trải nghiệm của kỹ sư.
+  - **Khi mất mạng (`connectivityService.isOnline == false`)**:
+    - Gán trực tiếp `status: 'pending'`.
+  - Lưu bản ghi vào SQLite Database cục bộ thông qua `localDataSource.saveTicket(model)` và phát tín hiệu cập nhật Stream danh sách biên bản.
+- **5.3. Lắng nghe thay đổi kết nối mạng (`ConnectivityService`) & Tự động Đồng bộ Ngầm**:
+  - Đăng ký subscription lắng nghe luồng `connectivityService.onConnectivityChanged`.
+  - Khi phát hiện mạng 4G/Wifi được phục hồi (`isOnline == true`), ứng dụng tự động kích hoạt hàm `syncPendingTickets()` trong nền:
+    - Quét toàn bộ danh sách bản ghi có trạng thái `pending` trong SQLite.
+    - Gửi tuần tự từng phiếu lên máy chủ trung tâm.
+    - Đánh dấu `markTicketAsSynced(ticket.id)` ngay khi từng phiếu thành công.
+    - Tự động giải phóng bộ nhớ khi repository bị hủy (`dispose()`).
+- **5.4. Trải nghiệm Người dùng Đồng bộ & Ngoại tuyến**:
+  - **Offline Banner**: Tự động hiển thị thanh cảnh báo màu hổ phách `Đang ngoại tuyến. Dữ liệu lưu cục bộ và sẽ tự động đồng bộ khi có kết nối.` khi mất mạng, và tự ẩn khi có mạng trở lại.
+  - **Badge Chờ sync**: Hiển thị đám mây màu vàng cam `☁ Chờ sync` trên từng thẻ phiếu chưa đồng bộ.
+  - **Badge Đã sync**: Tự động chuyển sang đám mây màu xanh ngọc `☁ Đã sync` ngay sau khi hệ thống tự động đồng bộ thành công.
+  - **Bộ đếm thời gian thực**: Cập nhật badge số lượng `Chờ đồng bộ (1)` trên Tab Lịch sử, Tab bar và Card Dashboard KPI.
+- **5.5. Kiểm thử Đơn vị & Xác thực Thực tế (Unit Test & Device Verification)**:
+  - Bổ sung file kiểm thử chuyên sâu `test/phase_5_offline_sync_test.dart` gồm 6 bài test:
+    1. Kiểm thử định danh trạng thái `isSynced` và `isPendingSync` trên Entity & Model.
+    2. Kiểm thử lưu phiếu khi Online -> gửi server thành công -> lưu local DB với status `synced`.
+    3. Kiểm thử lưu phiếu khi Offline -> lưu local DB với status `pending`.
+    4. Kiểm thử lưu phiếu khi Online nhưng Server báo lỗi 503 -> fallback an toàn lưu local với status `pending`.
+    5. Kiểm thử `ConnectivityService` phát hiện phục hồi mạng -> tự động duyệt danh sách `pending` và đồng bộ thành `synced`.
+    6. Kiểm thử hàm đồng bộ thủ công `syncPendingTickets()` trả về chính xác số lượng phiếu đã sync.
+  - Toàn bộ **26/26 bài kiểm thử** trong toàn dự án đạt **PASS 100%**.
+  - Kiểm tra tĩnh `flutter analyze`: **0 issues found**.
+  - **Xác thực trực tiếp trên Android Emulator `emulator-5554`**:
+    - Chạy lệnh ngắt mạng: `adb shell svc wifi disable && adb shell svc data disable`.
+    - Dashboard tự động đổi badge sang `● Offline`.
+    - Tạo phiếu mới -> vuốt để gửi biên bản -> SnackBar hiển thị: `✓ Đã lưu offline. Hệ thống sẽ tự đồng bộ khi có mạng!`.
+    - Tab Biên bản hiển thị phiếu với nhãn `☁ Chờ sync` và tab `Chờ đồng bộ (1)`.
+    - Chạy lệnh bật lại mạng: `adb shell svc wifi enable && adb shell svc data enable`.
+    - Ứng dụng tự động kích hoạt đồng bộ ngầm -> Phiếu tự động chuyển sang nhãn `☁ Đã sync` màu xanh, số lượng `Chờ đồng bộ` trở về `0`.
 
 ---
 
@@ -181,7 +219,7 @@ build_an_ai_field_assistant/
 │   │   │   ├── audio_recorder_service.dart     # Ghi âm (.m4a/.wav), amplitude stream, dọn dẹp file rác
 │   │   │   ├── audio_player_service.dart       # Trình phát lại âm thanh hiện trường
 │   │   │   ├── speech_to_text_service.dart     # Nhận diện & bóc băng giọng nói tiếng Việt thời gian thực
-│   │   │   └── connectivity_service.dart       # Giám sát trạng thái kết nối mạng Internet
+│   │   │   └── connectivity_service.dart       # Giám sát trạng thái kết nối mạng Internet (autoInit support)
 │   │   ├── di/
 │   │   │   └── injection_container.dart        # Service Locator (GetIt) tiêm phụ thuộc toàn dự án
 │   │   └── utils/
@@ -194,23 +232,23 @@ build_an_ai_field_assistant/
 │           ├── data/
 │           │   ├── datasources/
 │           │   │   ├── inspection_remote_ds.dart   # Gemini 1.5 Flash Multimodal + Multi-tier Fallback Engine
-│           │   │   └── inspection_local_ds.dart    # SQLite DB v2 (Auto-healing migration, indexing) & SharedPreferences
+│           │   │   └── inspection_local_ds.dart    # SQLite DB v2 (status: synced | pending, Auto-healing)
 │           │   ├── models/
 │           │   │   └── inspection_ticket_model.dart # Serialization, DTO, data sanitation, InspectionPart mapping
 │           │   └── repositories/
-│           │       └── inspection_repository_impl.dart # Điều phối logic Online vs Offline & Auto-sync
+│           │       └── inspection_repository_impl.dart # Điều phối logic Online vs Offline & Auto-sync Pipeline
 │           ├── domain/
 │           │   ├── entities/
-│           │   │   └── inspection_ticket.dart      # Business Entity thuần túy + InspectionPart
+│           │   │   └── inspection_ticket.dart      # Business Entity thuần túy + InspectionPart + isPendingSync
 │           │   └── repositories/
 │           │       └── i_inspection_repository.dart # Interface trừu tượng
 │           └── presentation/
 │               ├── controllers/
-│               │   └── inspection_controller.dart  # Quản lý trạng thái phiếu, ghi âm và đồng bộ
+│               │   └── inspection_controller.dart  # Quản lý trạng thái phiếu, ghi âm, lọc và đồng bộ
 │               ├── views/
 │               │   ├── voice_capture_screen.dart   # Màn hình thu âm hiện trường, Live STT Card, Preset chips
-│               │   ├── ticket_review_screen.dart   # Duyệt biên bản: Equipment ID, Issue cards, Parts +/-, 3-tier Priority, Swipe to submit
-│               │   └── ticket_history_screen.dart  # Quản lý danh sách biên bản (Tất cả / Chờ sync / Đã sync)
+│               │   ├── ticket_review_screen.dart   # Duyệt biên bản: Equipment ID, Issue cards, Parts +/-, Swipe to submit
+│               │   └── ticket_history_screen.dart  # Quản lý danh sách biên bản (Tất cả / Chờ sync / Đã sync), Offline banner
 │               └── widgets/
 │                   ├── wave_record_button.dart     # Nút thu âm lớn 88px, radar ripple đa tầng, timer HUD kỹ thuật số
 │                   ├── priority_badge_chip.dart    # Chip hiển thị & chọn cấp độ ưu tiên trực quan
@@ -222,7 +260,8 @@ build_an_ai_field_assistant/
 │   ├── audio_recorder_service_test.dart        # Unit test Pipeline âm thanh & Quyền Micro (PASS)
 │   ├── speech_to_text_service_test.dart        # Unit test Nhận diện giọng nói STT (PASS)
 │   ├── ai_extraction_service_test.dart         # Unit test Trích xuất JSON Gemini & Fallback (PASS)
-│   └── phase_4_interaction_test.dart           # Unit test Phase 4 UI & Interaction (PASS)
+│   ├── phase_4_interaction_test.dart           # Unit test Phase 4 UI & Interaction (PASS)
+│   └── phase_5_offline_sync_test.dart          # Unit test Phase 5 Offline-First & Auto-sync Pipeline (PASS)
 │
 ├── AI_WORKLOG.md                               # Nhật ký làm việc chi tiết với AI
 ├── README.md                                   # Tài liệu hướng dẫn cài đặt & vận hành dự án
@@ -237,33 +276,32 @@ build_an_ai_field_assistant/
 ```bash
 flutter analyze
 # Analyzing build_an_ai_field_assistant...
-# No issues found! (ran in 1.7s)
+# No issues found! (ran in 2.5s)
 ```
 - **Kết quả**: 0 lỗi (errors), 0 cảnh báo (warnings), 0 gợi ý (infos).
 
 ### 5.2. Kiểm Thử Đơn Vị Tự Động (Automated Unit Tests)
 ```bash
 flutter test
-# 00:00 +20: All tests passed!
+# 00:01 +26: All tests passed!
 ```
-- **Tổng số bài test**: 20/20 bài kiểm thử thành công (100% PASS).
+- **Tổng số bài test**: 26/26 bài kiểm thử thành công (100% PASS).
 - **Danh mục kiểm thử**:
   - `test/widget_test.dart`: Kiểm thử khởi tạo `InspectionTicket` và chuyển đổi DTO `InspectionTicketModel`.
   - `test/audio_recorder_service_test.dart`: Kiểm thử khởi tạo thư mục lưu trữ, định dạng file `.m4a` / `.wav`, cơ chế dọn dẹp file khi hủy ghi âm, xử lý ngoại lệ quyền micro.
   - `test/speech_to_text_service_test.dart`: Kiểm thử chu trình nhận diện giọng nói `SpeechToTextService` và luồng Stream từ khóa.
   - `test/ai_extraction_service_test.dart`: Kiểm thử xử lý JSON Gemini Flash, bóc tách tệp nhị phân âm thanh, bẫy lỗi mất mạng, bẫy lỗi định dạng và bộ lọc Heuristic tiếng Việt.
   - `test/phase_4_interaction_test.dart`: Kiểm thử mô hình linh kiện `InspectionPart`, bóc tách mã thiết bị `equipmentId`, bộ lọc thẻ lỗi, nút tăng giảm vật tư và widget `WaveRecordButton`.
+  - `test/phase_5_offline_sync_test.dart`: Kiểm thử định danh `status` ('synced' | 'pending'), lưu online, lưu offline, fallback khi server lỗi, và cơ chế tự động đồng bộ khi `ConnectivityService` phát hiện có mạng trở lại.
 
 ### 5.3. Kiểm Thử Trực Tiếp Trên Thiết Bị (Device & Emulator Verification)
 - **Thiết bị kiểm thử**: Android Emulator `emulator-5554` (`sdk_gphone16k_arm64`, Android 16 / VanillaIceCream / API 37).
-- **Trải nghiệm thực tế Giai đoạn 4**:
-  - Nút ghi âm 88px phản hồi tức thì với sóng radar tỏa mượt mà.
-  - Timer HUD kỹ thuật số đếm giây chính xác kèm chấm tròn `● REC` nhấp nháy.
-  - Giao diện Duyệt phiếu bóc tách tự động mã thiết bị (`Phân xưởng cán thép 2 / Van dầu DN50`).
-  - Thẻ lỗi hỗ trợ xóa nhanh và thêm lỗi mới qua dialog.
-  - Danh sách linh kiện cho phép tăng giảm số lượng tức thì với nút `+` / `-`.
-  - Selector 3 mức ưu tiên (Thấp / Trung bình / Khẩn cấp) trực quan và nhanh nhạy.
-  - Nút trượt công nghiệp (Swipe to Submit) vuốt mượt mà, lưu trữ thành công vào SQLite database và phản hồi thông báo xanh `✓ Đã duyệt & gửi biên bản lên hệ thống`.
+- **Trải nghiệm thực tế Giai đoạn 5**:
+  - Tắt mạng: Dashboard hiển thị `● Offline`, banner ngoại tuyến màu hổ phách xuất hiện.
+  - Lưu biên bản khi mất mạng: Thông báo `✓ Đã lưu offline. Hệ thống sẽ tự đồng bộ khi có mạng!`.
+  - Thẻ biên bản lưu vào SQLite với trạng thái `pending` và hiển thị badge `☁ Chờ sync`.
+  - Bật lại mạng: `ConnectivityService` phát tín hiệu `isOnline = true`, repository tự động kích hoạt `syncPendingTickets()`.
+  - Phiếu tự động chuyển sang `☁ Đã sync` màu xanh ngọc, số lượng `Chờ đồng bộ` trở về `0`.
 
 ---
 
@@ -278,13 +316,14 @@ flutter test
 | `0d81571` | **Giai đoạn 3** | `feat(phase-3): ai service structured output, clean prompt json schema va multi-tier fallback` |
 | `ec02427` | **Worklog Sync** | `docs: cap nhat toan bo AI_WORKLOG.md giai doan 1-3 va dong bo len git` |
 | `b1c0fea` | **Giai đoạn 4** | `feat(phase-4): hoan thanh man hinh giao dien & trai nghiem tuong tac` |
+| `c10c630` | **Worklog Sync** | `docs: cap nhat ma commit b1c0fea cho giai doan 4 trong AI_WORKLOG.md` |
+| *(pending)* | **Giai đoạn 5** | `feat(phase-5): xu ly offline-first, luu tru sqlite synced|pending va auto-sync connectivity` |
 
 ---
 
-## 7. Kế Hoạch Triển Khai Tiếp Theo (Giai Đoạn 5)
+## 7. Kế Hoạch Triển Khai Tiếp Theo (Giai Đoạn 6)
 
-- [ ] **Giai đoạn 5: Offline-First Nâng cao, Xử lý Xung đột & Đồng bộ Đám mây (Cloud Sync Queue)**:
-  - [ ] Nâng cấp hàng đợi đồng bộ ngầm (Background Sync Queue) khi `ConnectivityService` phát hiện có mạng trở lại.
-  - [ ] Cơ chế giải quyết xung đột dữ liệu (Conflict Resolution: Last-Write-Wins hoặc Remote-Priority).
-  - [ ] Đẩy dữ liệu biên bản và tệp âm thanh đồng bộ lên Backend Server / Firebase / REST API.
-  - [ ] Bộ lọc và tìm kiếm toàn văn (Full-text search) trên SQLite cho danh sách biên bản lịch sử.
+- [ ] **Giai đoạn 6: Camera Inspection, Multimodal Visual Analysis & Xuất Báo cáo PDF**:
+  - [ ] Tích hợp chụp ảnh hiện trường và đính kèm vào biên bản sự cố.
+  - [ ] Gửi hình ảnh đính kèm lên Gemini 1.5 Flash Vision để phát hiện nứt gãy, biến dạng vật lý bằng AI thị giác máy tính.
+  - [ ] Xuất biên bản kiểm tra sự cố định dạng PDF chuyên nghiệp có chữ ký kỹ sư và chia sẻ qua Zalo/Email.

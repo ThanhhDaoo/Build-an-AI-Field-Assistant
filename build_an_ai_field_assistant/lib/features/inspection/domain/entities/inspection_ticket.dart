@@ -85,7 +85,7 @@ class InspectionTicket {
   });
 
   bool get isSynced => status == 'synced';
-  bool get isPendingSync => status == 'pending_sync';
+  bool get isPendingSync => status == 'pending' || status == 'pending_sync';
 
   InspectionTicket copyWith({
     String? id,

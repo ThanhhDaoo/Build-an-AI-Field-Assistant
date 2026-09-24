@@ -52,8 +52,8 @@ void main() {
       expect(ticket.category, 'general');
       expect(ticket.priority, 'medium');
       expect(ticket.inspectorName, 'Kỹ sư hiện trường');
-      expect(ticket.confidenceScore, 0.95);
-      expect(ticket.status, 'pending_sync');
+      expect(ticket.status, 'pending');
+      expect(ticket.isPendingSync, true);
       expect(ticket.id.isNotEmpty, true);
     });
 

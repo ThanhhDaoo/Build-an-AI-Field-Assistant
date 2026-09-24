@@ -9,9 +9,11 @@ class ConnectivityService {
   StreamSubscription<List<ConnectivityResult>>? _subscription;
   bool _isOnline = true;
 
-  ConnectivityService({Connectivity? connectivity})
+  ConnectivityService({Connectivity? connectivity, bool autoInit = true})
       : _connectivity = connectivity ?? Connectivity() {
-    _init();
+    if (autoInit) {
+      _init();
+    }
   }
 
   bool get isOnline => _isOnline;
