@@ -247,6 +247,7 @@ flutter test
 ---
 
 ## 7. 👥 Tác Giả & Bản Quyền
+- **Tác giả phát triển**: **Trần Thanh Đạo** ([@ThanhhDaoo](https://github.com/ThanhhDaoo))
 - Dự án: **Field AI Assistant — Trợ lý Giám sát & Báo cáo Hiện trường AI**
 - Repository: [https://github.com/ThanhhDaoo/Build-an-AI-Field-Assistant](https://github.com/ThanhhDaoo/Build-an-AI-Field-Assistant)
 - Giấy phép: MIT License.
