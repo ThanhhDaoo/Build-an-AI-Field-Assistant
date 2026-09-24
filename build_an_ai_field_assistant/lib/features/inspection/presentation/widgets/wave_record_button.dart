@@ -1,13 +1,15 @@
+import 'dart:math';
 import 'package:flutter/material.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/utils/date_formatter.dart';
 
-/// Animated Pulsating & Soundwave Recording Button
+/// Professional Soundwave Recording Widget with real-time frequency equalizer
 class WaveRecordButton extends StatefulWidget {
   final bool isRecording;
   final double amplitude;
   final Duration duration;
   final VoidCallback onTap;
+  final VoidCallback? onCancel;
 
   const WaveRecordButton({
     super.key,
@@ -15,6 +17,7 @@ class WaveRecordButton extends StatefulWidget {
     required this.amplitude,
     required this.duration,
     required this.onTap,
+    this.onCancel,
   });
 
   @override
@@ -23,143 +26,193 @@ class WaveRecordButton extends StatefulWidget {
 
 class _WaveRecordButtonState extends State<WaveRecordButton>
     with SingleTickerProviderStateMixin {
-  late AnimationController _animController;
-  late Animation<double> _scaleAnimation;
+  late AnimationController _pulseController;
 
   @override
   void initState() {
     super.initState();
-    _animController = AnimationController(
+    _pulseController = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 1200),
+      duration: const Duration(milliseconds: 1000),
     )..repeat(reverse: true);
-
-    _scaleAnimation = Tween<double>(begin: 1.0, end: 1.15).animate(
-      CurvedAnimation(parent: _animController, curve: Curves.easeInOut),
-    );
   }
 
   @override
   void dispose() {
-    _animController.dispose();
+    _pulseController.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    // Dynamic amplitude scale
-    final ampScale = (widget.amplitude * 0.4).clamp(0.0, 0.5);
-
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
+        // Equalizer frequency visualizer (only visible when recording)
+        AnimatedContainer(
+          duration: const Duration(milliseconds: 300),
+          height: widget.isRecording ? 60 : 0,
+          child: widget.isRecording
+              ? Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: List.generate(24, (index) {
+                    final normalizedAmp = widget.amplitude.clamp(0.1, 1.0);
+                    // Add slight deterministic variance across bars
+                    final factor = (sin(index * 0.5 + _pulseController.value * pi) + 1) / 2;
+                    final barHeight = (12 + (factor * 44 * normalizedAmp)).clamp(6.0, 56.0);
+
+                    return Container(
+                      width: 4,
+                      height: barHeight,
+                      margin: const EdgeInsets.symmetric(horizontal: 2.5),
+                      decoration: BoxDecoration(
+                        color: index.isEven
+                            ? AppColors.primary
+                            : AppColors.primaryLight,
+                        borderRadius: BorderRadius.circular(3),
+                      ),
+                    );
+                  }),
+                )
+              : const SizedBox.shrink(),
+        ),
+
+        const SizedBox(height: 16),
+
+        // Recording Duration Pill
         if (widget.isRecording) ...[
-          // Duration Indicator
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
             decoration: BoxDecoration(
-              color: AppColors.recordingActive.withValues(alpha: 0.15),
+              color: AppColors.surfaceLight,
               borderRadius: BorderRadius.circular(20),
               border: Border.all(
-                color: AppColors.recordingActive.withValues(alpha: 0.4),
+                color: AppColors.recordingActive.withValues(alpha: 0.5),
               ),
             ),
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Container(
-                  width: 8,
-                  height: 8,
-                  decoration: const BoxDecoration(
-                    color: AppColors.recordingActive,
-                    shape: BoxShape.circle,
-                  ),
+                AnimatedBuilder(
+                  animation: _pulseController,
+                  builder: (context, _) {
+                    return Container(
+                      width: 8,
+                      height: 8,
+                      decoration: BoxDecoration(
+                        color: AppColors.recordingActive,
+                        shape: BoxShape.circle,
+                        boxShadow: [
+                          BoxShadow(
+                            color: AppColors.recordingActive.withValues(
+                              alpha: _pulseController.value * 0.8,
+                            ),
+                            blurRadius: 6,
+                            spreadRadius: 1,
+                          ),
+                        ],
+                      ),
+                    );
+                  },
                 ),
                 const SizedBox(width: 8),
                 Text(
-                  'Đang ghi âm: ${DateFormatter.formatDuration(widget.duration)}',
+                  DateFormatter.formatDuration(widget.duration),
                   style: const TextStyle(
-                    color: AppColors.recordingActive,
-                    fontSize: 13,
+                    color: AppColors.textPrimary,
+                    fontSize: 14,
                     fontWeight: FontWeight.w700,
                     letterSpacing: 0.5,
+                  ),
+                ),
+                const SizedBox(width: 8),
+                const Text(
+                  '• REC',
+                  style: TextStyle(
+                    color: AppColors.recordingActive,
+                    fontSize: 11,
+                    fontWeight: FontWeight.bold,
                   ),
                 ),
               ],
             ),
           ),
-          const SizedBox(height: 18),
+          const SizedBox(height: 20),
         ],
 
-        // Waveform Button
-        GestureDetector(
-          onTap: widget.onTap,
-          child: AnimatedBuilder(
-            animation: _animController,
-            builder: (context, child) {
-              return Stack(
-                alignment: Alignment.center,
-                children: [
-                  // Outer Ripple 2 (Only when recording)
-                  if (widget.isRecording)
-                    Container(
-                      width: 140 + (ampScale * 50),
-                      height: 140 + (ampScale * 50),
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: AppColors.recordingActive.withValues(
-                          alpha: ((1.0 - _animController.value) * 0.25).clamp(0.0, 1.0),
-                        ),
-                      ),
-                    ),
-
-                  // Outer Ripple 1
-                  if (widget.isRecording)
-                    Container(
-                      width: 115 + (ampScale * 35),
-                      height: 115 + (ampScale * 35),
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: AppColors.recordingActive.withValues(alpha: 0.35),
-                      ),
-                    ),
-
-                  // Main Button Container
-                  Transform.scale(
-                    scale: widget.isRecording ? (1.0 + ampScale) : _scaleAnimation.value,
-                    child: Container(
-                      width: 86,
-                      height: 86,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        gradient: LinearGradient(
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                          colors: widget.isRecording
-                              ? [const Color(0xFFEF4444), const Color(0xFFDC2626)]
-                              : [AppColors.primary, const Color(0xFF059669)],
-                        ),
-                        boxShadow: [
-                          BoxShadow(
-                            color: widget.isRecording
-                                ? AppColors.recordingGlow
-                                : AppColors.primary.withValues(alpha: 0.4),
-                            blurRadius: widget.isRecording ? 30 : 20,
-                            spreadRadius: widget.isRecording ? 6 : 2,
-                          ),
-                        ],
-                      ),
-                      child: Icon(
-                        widget.isRecording ? Icons.stop_rounded : Icons.mic_rounded,
-                        color: Colors.white,
-                        size: 42,
-                      ),
-                    ),
+        // Main Center Record Button
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            // Cancel Button (if recording)
+            if (widget.isRecording && widget.onCancel != null)
+              Padding(
+                padding: const EdgeInsets.only(right: 20),
+                child: IconButton(
+                  onPressed: widget.onCancel,
+                  style: IconButton.styleFrom(
+                    backgroundColor: AppColors.surface,
+                    foregroundColor: AppColors.textMuted,
+                    side: const BorderSide(color: AppColors.cardBorder),
+                    padding: const EdgeInsets.all(12),
                   ),
-                ],
-              );
-            },
-          ),
+                  icon: const Icon(Icons.close_rounded, size: 22),
+                  tooltip: 'Hủy ghi âm',
+                ),
+              ),
+
+            // Big Action Button
+            GestureDetector(
+              onTap: widget.onTap,
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 250),
+                curve: Curves.easeOutCubic,
+                width: widget.isRecording ? 76 : 76,
+                height: widget.isRecording ? 76 : 76,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: widget.isRecording
+                      ? AppColors.recordingActive
+                      : AppColors.primary,
+                  boxShadow: [
+                    BoxShadow(
+                      color: (widget.isRecording
+                              ? AppColors.recordingActive
+                              : AppColors.primary)
+                          .withValues(alpha: 0.35),
+                      blurRadius: 16,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
+                ),
+                child: Center(
+                  child: AnimatedSwitcher(
+                    duration: const Duration(milliseconds: 200),
+                    child: widget.isRecording
+                        ? Container(
+                            key: const ValueKey('stop_icon'),
+                            width: 24,
+                            height: 24,
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                          )
+                        : const Icon(
+                            Icons.mic_rounded,
+                            key: ValueKey('mic_icon'),
+                            color: Colors.white,
+                            size: 38,
+                          ),
+                  ),
+                ),
+              ),
+            ),
+
+            if (widget.isRecording && widget.onCancel != null)
+              const SizedBox(width: 60), // balance the row
+          ],
         ),
       ],
     );

@@ -74,13 +74,14 @@ field_ai_assistant/
 │               ├── controllers/                    # State management (ChangeNotifier)
 │               │   └── inspection_controller.dart
 │               ├── views/
-│               │   ├── voice_capture_screen.dart   # Màn hình ghi âm chính & chọn kịch bản mẫu
-│               │   ├── ticket_review_screen.dart   # Màn hình review form AI tự điền
-│               │   └── ticket_history_screen.dart  # Danh sách phiếu (Đã gửi / Chờ sync)
+│               │   ├── main_shell_screen.dart      # Navigation Shell: Dashboard, Voice Station, History
+│               │   ├── voice_capture_screen.dart   # Màn hình thu âm Equalizer & kịch bản mẫu
+│               │   ├── ticket_review_screen.dart   # Màn hình duyệt biên bản & phát lại âm thanh
+│               │   └── ticket_history_screen.dart  # Danh sách biên bản (Lọc trạng thái, Sync)
 │               └── widgets/
-│                   ├── wave_record_button.dart     # Nút thu âm có hiệu ứng sóng âm
-│                   ├── priority_badge_chip.dart    # Chip hiển thị & chọn độ ưu tiên
-│                   └── swipe_to_submit_btn.dart    # Nút vuốt để gửi phiếu
+│                   ├── wave_record_button.dart     # Nút thu âm Equalizer 24 thanh âm
+│                   ├── priority_badge_chip.dart    # Huy hiệu & chip chọn mức độ ưu tiên
+│                   └── swipe_to_submit_btn.dart    # Nút vuốt chống bấm nhầm công nghiệp
 │
 ├── AI_WORKLOG.md                               # Nhật ký chi tiết làm việc với AI
 ├── README.md                                   # Tài liệu hướng dẫn dự án

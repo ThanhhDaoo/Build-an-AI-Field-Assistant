@@ -12,7 +12,7 @@ import '../controllers/inspection_controller.dart';
 import '../widgets/priority_badge_chip.dart';
 import '../widgets/swipe_to_submit_btn.dart';
 
-/// Review & Edit Screen for AI-extracted Inspection Ticket
+/// Professional Field Inspection Report Review Form
 class TicketReviewScreen extends StatefulWidget {
   final InspectionController controller;
   final InspectionTicket initialTicket;
@@ -87,8 +87,8 @@ class _TicketReviewScreenState extends State<TicketReviewScreen> {
       DialogHelper.showSnackBar(
         context,
         widget.controller.isOnline
-            ? 'Đã gửi biên bản lên hệ thống thành công!'
-            : 'Đã lưu offline. Biên bản sẽ tự động đồng bộ khi có mạng!',
+            ? 'Đã duyệt & gửi biên bản lên hệ thống'
+            : 'Đã lưu offline. Hệ thống sẽ tự đồng bộ khi có mạng!',
       );
       Navigator.of(context).pop();
     } else {
@@ -103,18 +103,18 @@ class _TicketReviewScreenState extends State<TicketReviewScreen> {
   String _getCategoryLabel(String cat) {
     switch (cat) {
       case 'electrical':
-        return 'Điện / Tủ điện';
+        return 'Điện lực';
       case 'mechanical':
         return 'Cơ khí / Van';
       case 'civil':
-        return 'Xây dựng / Kết cấu';
+        return 'Xây dựng';
       case 'safety':
         return 'An toàn / PCCC';
       case 'hvac':
-        return 'HVAC / Thông gió';
+        return 'HVAC / Làm mát';
       case 'general':
       default:
-        return 'Khác / Tổng quát';
+        return 'Chung / Khác';
     }
   }
 
@@ -138,8 +138,6 @@ class _TicketReviewScreenState extends State<TicketReviewScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final confidencePct = (widget.initialTicket.confidenceScore * 100).toInt();
-
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
@@ -150,7 +148,7 @@ class _TicketReviewScreenState extends State<TicketReviewScreen> {
           onPressed: () => Navigator.of(context).pop(),
         ),
         title: const Text(
-          'Duyệt biên bản AI tự điền',
+          'Duyệt biên bản kiểm tra',
           style: TextStyle(
             color: AppColors.textPrimary,
             fontSize: 16,
@@ -160,35 +158,37 @@ class _TicketReviewScreenState extends State<TicketReviewScreen> {
       ),
       body: SafeArea(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // AI Confidence Badge Banner
+              // Ticket Metadata Strip
               Container(
                 width: double.infinity,
                 padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
                 decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [
-                      AppColors.primary.withValues(alpha: 0.15),
-                      AppColors.secondary.withValues(alpha: 0.15),
-                    ],
-                  ),
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: AppColors.primary.withValues(alpha: 0.3)),
+                  color: AppColors.surface,
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: AppColors.cardBorder),
                 ),
                 child: Row(
                   children: [
-                    const Icon(Icons.auto_awesome, color: AppColors.primaryLight, size: 20),
-                    const SizedBox(width: 10),
-                    Expanded(
+                    Container(
+                      width: 8,
+                      height: 8,
+                      decoration: const BoxDecoration(
+                        color: AppColors.primary,
+                        shape: BoxShape.circle,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    const Expanded(
                       child: Text(
-                        'Gemini AI đã tự động điền form • Độ tin cậy: $confidencePct%',
-                        style: const TextStyle(
-                          color: AppColors.primaryLight,
-                          fontSize: 12.5,
-                          fontWeight: FontWeight.w600,
+                        'Biên bản tiếp nhận từ giọng nói • Vui lòng rà soát lại thông tin',
+                        style: TextStyle(
+                          color: AppColors.textSecondary,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w500,
                         ),
                       ),
                     ),
@@ -196,139 +196,133 @@ class _TicketReviewScreenState extends State<TicketReviewScreen> {
                 ),
               ),
 
-              const SizedBox(height: 18),
-
-              // Title Field
-              _buildSectionLabel('Tiêu đề sự cố:'),
-              TextField(
-                controller: _titleController,
-                style: const TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.w600),
-                decoration: _inputDecoration(
-                  hint: 'Nhập tiêu đề biên bản kiểm tra...',
-                  prefixIcon: Icons.title_rounded,
-                ),
-              ),
-
               const SizedBox(height: 16),
 
-              // Location Field
-              _buildSectionLabel('Vị trí phát hiện:'),
-              TextField(
-                controller: _locationController,
-                style: const TextStyle(color: AppColors.textPrimary),
-                decoration: _inputDecoration(
-                  hint: 'Nhập vị trí cụ thể trong nhà máy...',
-                  prefixIcon: Icons.place_rounded,
-                ),
-              ),
-
-              const SizedBox(height: 16),
-
-              // Priority Selector
-              _buildSectionLabel('Mức độ ưu tiên:'),
-              Wrap(
-                spacing: 8,
-                runSpacing: 8,
-                children: AppConstants.priorities.map((p) {
-                  return PriorityBadgeChip(
-                    priority: p,
-                    isInteractive: true,
-                    isSelected: _selectedPriority.toLowerCase() == p,
-                    onSelected: (val) {
-                      setState(() => _selectedPriority = val);
-                    },
-                  );
-                }).toList(),
-              ),
-
-              const SizedBox(height: 16),
-
-              // Category Selector
-              _buildSectionLabel('Danh mục kỹ thuật:'),
-              Wrap(
-                spacing: 8,
-                runSpacing: 8,
-                children: AppConstants.categories.map((c) {
-                  final isSelected = _selectedCategory.toLowerCase() == c;
-                  return ChoiceChip(
-                    label: Text(_getCategoryLabel(c)),
-                    avatar: Icon(
-                      _getCategoryIcon(c),
-                      size: 16,
-                      color: isSelected ? Colors.white : AppColors.textSecondary,
-                    ),
-                    selected: isSelected,
-                    selectedColor: AppColors.primaryDark,
-                    backgroundColor: AppColors.surface,
-                    labelStyle: TextStyle(
-                      color: isSelected ? Colors.white : AppColors.textSecondary,
-                      fontSize: 12,
-                      fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                    ),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
-                      side: BorderSide(
-                        color: isSelected ? AppColors.primary : AppColors.cardBorder,
-                      ),
-                    ),
-                    onSelected: (_) {
-                      setState(() => _selectedCategory = c);
-                    },
-                  );
-                }).toList(),
-              ),
-
-              const SizedBox(height: 16),
-
-              // Description Field
-              _buildSectionLabel('Mô tả hiện trạng:'),
-              TextField(
-                controller: _descriptionController,
-                maxLines: 3,
-                style: const TextStyle(color: AppColors.textPrimary, height: 1.4),
-                decoration: _inputDecoration(
-                  hint: 'Mô tả chi tiết biểu hiện của sự cố...',
-                  prefixIcon: Icons.description_rounded,
-                ),
-              ),
-
-              const SizedBox(height: 16),
-
-              // Suggested Action
-              _buildSectionLabel('Hành động đề xuất khắc phục:'),
-              TextField(
-                controller: _actionController,
-                maxLines: 2,
-                style: const TextStyle(color: AppColors.textPrimary, height: 1.4),
-                decoration: _inputDecoration(
-                  hint: 'Khuyến nghị giải pháp kỹ thuật...',
-                  prefixIcon: Icons.handyman_rounded,
-                ),
-              ),
-
-              const SizedBox(height: 16),
-
-              // Inspector Name
-              _buildSectionLabel('Người lập biên bản:'),
-              TextField(
-                controller: _inspectorController,
-                style: const TextStyle(color: AppColors.textPrimary),
-                decoration: _inputDecoration(
-                  hint: 'Tên kỹ sư hiện trường...',
-                  prefixIcon: Icons.person_rounded,
-                ),
-              ),
-
-              const SizedBox(height: 20),
-
-              // Audio Playback Preview (if audio was recorded)
+              // Audio Playback Bar (if available)
               if (widget.initialTicket.audioPath != null &&
                   widget.initialTicket.audioPath!.isNotEmpty) ...[
                 _AudioPlaybackCard(audioPath: widget.initialTicket.audioPath!),
                 const SizedBox(height: 16),
               ],
 
-              // Original Voice Transcript Expansion (if available)
+              // Card Section 1: Thông tin cơ bản
+              _buildCardContainer(
+                title: 'THÔNG TIN SỰ CỐ',
+                children: [
+                  _buildFieldLabel('Tiêu đề biên bản'),
+                  TextField(
+                    controller: _titleController,
+                    style: const TextStyle(color: AppColors.textPrimary, fontSize: 14, fontWeight: FontWeight.w600),
+                    decoration: _inputDecoration(hint: 'Nhập tiêu đề sự cố...'),
+                  ),
+                  const SizedBox(height: 14),
+                  _buildFieldLabel('Vị trí hiện trường'),
+                  TextField(
+                    controller: _locationController,
+                    style: const TextStyle(color: AppColors.textPrimary, fontSize: 13.5),
+                    decoration: _inputDecoration(
+                      hint: 'Ví dụ: Phân xưởng cán thép 2, Trạm biến áp T1...',
+                      prefixIcon: Icons.place_rounded,
+                    ),
+                  ),
+                ],
+              ),
+
+              const SizedBox(height: 16),
+
+              // Card Section 2: Đánh giá & Phân loại
+              _buildCardContainer(
+                title: 'PHÂN LOẠI & MỨC ĐỘ KHẨN CẤP',
+                children: [
+                  _buildFieldLabel('Mức độ ưu tiên'),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: AppConstants.priorities.map((p) {
+                      return PriorityBadgeChip(
+                        priority: p,
+                        isInteractive: true,
+                        isSelected: _selectedPriority.toLowerCase() == p,
+                        onSelected: (val) {
+                          setState(() => _selectedPriority = val);
+                        },
+                      );
+                    }).toList(),
+                  ),
+                  const SizedBox(height: 14),
+                  _buildFieldLabel('Danh mục kỹ thuật'),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: AppConstants.categories.map((c) {
+                      final isSelected = _selectedCategory.toLowerCase() == c;
+                      return ChoiceChip(
+                        label: Text(_getCategoryLabel(c)),
+                        avatar: Icon(
+                          _getCategoryIcon(c),
+                          size: 15,
+                          color: isSelected ? Colors.white : AppColors.textSecondary,
+                        ),
+                        selected: isSelected,
+                        selectedColor: AppColors.primaryDark,
+                        backgroundColor: AppColors.background,
+                        labelStyle: TextStyle(
+                          color: isSelected ? Colors.white : AppColors.textSecondary,
+                          fontSize: 12,
+                          fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                          side: BorderSide(
+                            color: isSelected ? AppColors.primary : AppColors.cardBorder,
+                          ),
+                        ),
+                        onSelected: (_) {
+                          setState(() => _selectedCategory = c);
+                        },
+                      );
+                    }).toList(),
+                  ),
+                ],
+              ),
+
+              const SizedBox(height: 16),
+
+              // Card Section 3: Hiện trạng & Đề xuất
+              _buildCardContainer(
+                title: 'HIỆN TRẠNG & BIỆN PHÁP XỬ LÝ',
+                children: [
+                  _buildFieldLabel('Mô tả hiện trạng'),
+                  TextField(
+                    controller: _descriptionController,
+                    maxLines: 3,
+                    style: const TextStyle(color: AppColors.textPrimary, fontSize: 13.5, height: 1.4),
+                    decoration: _inputDecoration(hint: 'Mô tả chi tiết sự cố phát hiện tại hiện trường...'),
+                  ),
+                  const SizedBox(height: 14),
+                  _buildFieldLabel('Hành động đề xuất khắc phục'),
+                  TextField(
+                    controller: _actionController,
+                    maxLines: 2,
+                    style: const TextStyle(color: AppColors.textPrimary, fontSize: 13.5, height: 1.4),
+                    decoration: _inputDecoration(hint: 'Khuyến nghị giải pháp kỹ thuật tức thời...'),
+                  ),
+                  const SizedBox(height: 14),
+                  _buildFieldLabel('Người lập biên bản'),
+                  TextField(
+                    controller: _inspectorController,
+                    style: const TextStyle(color: AppColors.textPrimary, fontSize: 13.5),
+                    decoration: _inputDecoration(
+                      hint: 'Tên kỹ sư kiểm tra...',
+                      prefixIcon: Icons.person_rounded,
+                    ),
+                  ),
+                ],
+              ),
+
+              const SizedBox(height: 16),
+
+              // Transcript Preview (if available)
               if (widget.initialTicket.rawTranscript != null &&
                   widget.initialTicket.rawTranscript!.isNotEmpty) ...[
                 Theme(
@@ -337,10 +331,10 @@ class _TicketReviewScreenState extends State<TicketReviewScreen> {
                     tilePadding: EdgeInsets.zero,
                     initiallyExpanded: _showRawTranscript,
                     title: const Text(
-                      'Xem bản ghi âm thô (Transcript)',
+                      'Bản ghi âm giọng nói thô (Transcript)',
                       style: TextStyle(
                         color: AppColors.secondary,
-                        fontSize: 13,
+                        fontSize: 12.5,
                         fontWeight: FontWeight.w600,
                       ),
                     ),
@@ -350,14 +344,14 @@ class _TicketReviewScreenState extends State<TicketReviewScreen> {
                         padding: const EdgeInsets.all(12),
                         decoration: BoxDecoration(
                           color: AppColors.surface,
-                          borderRadius: BorderRadius.circular(10),
+                          borderRadius: BorderRadius.circular(8),
                           border: Border.all(color: AppColors.cardBorder),
                         ),
                         child: Text(
                           widget.initialTicket.rawTranscript!,
                           style: const TextStyle(
                             color: AppColors.textSecondary,
-                            fontSize: 12.5,
+                            fontSize: 12,
                             fontStyle: FontStyle.italic,
                             height: 1.4,
                           ),
@@ -366,10 +360,10 @@ class _TicketReviewScreenState extends State<TicketReviewScreen> {
                     ],
                   ),
                 ),
-                const SizedBox(height: 24),
+                const SizedBox(height: 20),
               ],
 
-              // Swipe to Submit Button
+              // Swipe to Submit / Confirm Action
               SwipeToSubmitButton(
                 onSubmit: _handleSubmit,
                 isLoading: _isSubmitting,
@@ -383,38 +377,66 @@ class _TicketReviewScreenState extends State<TicketReviewScreen> {
     );
   }
 
-  Widget _buildSectionLabel(String label) {
+  Widget _buildCardContainer({required String title, required List<Widget> children}) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: AppColors.cardBorder),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            title,
+            style: const TextStyle(
+              color: AppColors.primary,
+              fontSize: 11.5,
+              fontWeight: FontWeight.bold,
+              letterSpacing: 0.8,
+            ),
+          ),
+          const SizedBox(height: 12),
+          ...children,
+        ],
+      ),
+    );
+  }
+
+  Widget _buildFieldLabel(String label) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 6.0),
       child: Text(
         label,
         style: const TextStyle(
           color: AppColors.textSecondary,
-          fontSize: 13,
+          fontSize: 12.5,
           fontWeight: FontWeight.w600,
         ),
       ),
     );
   }
 
-  InputDecoration _inputDecoration({required String hint, required IconData prefixIcon}) {
+  InputDecoration _inputDecoration({required String hint, IconData? prefixIcon}) {
     return InputDecoration(
       hintText: hint,
       hintStyle: const TextStyle(color: AppColors.textMuted, fontSize: 13),
       filled: true,
-      fillColor: AppColors.surface,
-      prefixIcon: Icon(prefixIcon, color: AppColors.textMuted, size: 20),
-      contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      fillColor: AppColors.background,
+      prefixIcon: prefixIcon != null ? Icon(prefixIcon, color: AppColors.textMuted, size: 18) : null,
+      contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 11),
       border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(10),
+        borderRadius: BorderRadius.circular(8),
         borderSide: const BorderSide(color: AppColors.cardBorder),
       ),
       enabledBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(10),
+        borderRadius: BorderRadius.circular(8),
         borderSide: const BorderSide(color: AppColors.cardBorder),
       ),
       focusedBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(10),
+        borderRadius: BorderRadius.circular(8),
         borderSide: const BorderSide(color: AppColors.primary),
       ),
     );
@@ -447,21 +469,15 @@ class _AudioPlaybackCardState extends State<_AudioPlaybackCard> {
     _playerService = sl<AudioPlayerService>();
 
     _stateSub = _playerService.onPlayerStateChanged.listen((state) {
-      if (mounted) {
-        setState(() => _isPlaying = state == PlayerState.playing);
-      }
+      if (mounted) setState(() => _isPlaying = state == PlayerState.playing);
     });
 
     _posSub = _playerService.onPositionChanged.listen((pos) {
-      if (mounted) {
-        setState(() => _position = pos);
-      }
+      if (mounted) setState(() => _position = pos);
     });
 
     _durSub = _playerService.onDurationChanged.listen((dur) {
-      if (mounted) {
-        setState(() => _duration = dur);
-      }
+      if (mounted) setState(() => _duration = dur);
     });
   }
 
@@ -480,8 +496,8 @@ class _AudioPlaybackCardState extends State<_AudioPlaybackCard> {
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
       decoration: BoxDecoration(
         color: AppColors.surface,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.primary.withValues(alpha: 0.3)),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: AppColors.cardBorder),
       ),
       child: Row(
         children: [
@@ -494,11 +510,9 @@ class _AudioPlaybackCardState extends State<_AudioPlaybackCard> {
               }
             },
             icon: Icon(
-              _isPlaying
-                  ? Icons.pause_circle_filled_rounded
-                  : Icons.play_circle_fill_rounded,
+              _isPlaying ? Icons.pause_circle_filled_rounded : Icons.play_circle_fill_rounded,
               color: AppColors.primary,
-              size: 36,
+              size: 32,
             ),
           ),
           const SizedBox(width: 8),
@@ -530,4 +544,3 @@ class _AudioPlaybackCardState extends State<_AudioPlaybackCard> {
     );
   }
 }
-

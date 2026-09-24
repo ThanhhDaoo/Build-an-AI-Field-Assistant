@@ -3,6 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'core/constants/app_colors.dart';
 import 'core/constants/app_constants.dart';
 import 'features/inspection/presentation/controllers/inspection_controller.dart';
+import 'features/inspection/presentation/views/main_shell_screen.dart';
 import 'features/inspection/presentation/views/ticket_history_screen.dart';
 import 'features/inspection/presentation/views/voice_capture_screen.dart';
 
@@ -60,7 +61,8 @@ class FieldAiAssistantApp extends StatelessWidget {
       ),
       initialRoute: '/',
       routes: {
-        '/': (context) => VoiceCaptureScreen(controller: controller),
+        '/': (context) => MainShellScreen(controller: controller),
+        '/record': (context) => VoiceCaptureScreen(controller: controller),
         '/history': (context) => TicketHistoryScreen(controller: controller),
       },
     );

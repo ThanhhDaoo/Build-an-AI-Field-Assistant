@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../../core/constants/app_colors.dart';
 
-/// Priority Badge and Selector Chip with industrial high-visibility styling
+/// Clean, Human-Centered Priority Badge and Segment Chip
 class PriorityBadgeChip extends StatelessWidget {
   final String priority;
   final bool isSelected;
@@ -58,47 +58,40 @@ class PriorityBadgeChip extends StatelessWidget {
     }
   }
 
-  IconData _getIcon() {
-    switch (priority.toLowerCase()) {
-      case 'critical':
-        return Icons.warning_rounded;
-      case 'high':
-        return Icons.arrow_upward_rounded;
-      case 'medium':
-        return Icons.remove_rounded;
-      case 'low':
-      default:
-        return Icons.arrow_downward_rounded;
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     final color = _getColor();
     final bgColor = _getBgColor();
     final label = _getLabel();
-    final icon = _getIcon();
 
     if (!isInteractive) {
-      // Compact read-only badge
+      // Clean status pill for cards & lists
       return Container(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
         decoration: BoxDecoration(
           color: bgColor,
-          borderRadius: BorderRadius.circular(8),
-          border: Border.all(color: color.withValues(alpha: 0.5), width: 1),
+          borderRadius: BorderRadius.circular(6),
+          border: Border.all(color: color.withValues(alpha: 0.35), width: 1),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(icon, color: color, size: 14),
-            const SizedBox(width: 4),
+            Container(
+              width: 6,
+              height: 6,
+              decoration: BoxDecoration(
+                color: color,
+                shape: BoxShape.circle,
+              ),
+            ),
+            const SizedBox(width: 5),
             Text(
               label,
               style: TextStyle(
                 color: color,
-                fontSize: 12,
+                fontSize: 11,
                 fontWeight: FontWeight.w600,
+                letterSpacing: 0.2,
               ),
             ),
           ],
@@ -106,44 +99,45 @@ class PriorityBadgeChip extends StatelessWidget {
       );
     }
 
-    // Interactive selection chip
-    return InkWell(
-      onTap: () => onSelected?.call(priority.toLowerCase()),
-      borderRadius: BorderRadius.circular(10),
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-        decoration: BoxDecoration(
-          color: isSelected ? color.withValues(alpha: 0.25) : AppColors.surface,
-          borderRadius: BorderRadius.circular(10),
-          border: Border.all(
-            color: isSelected ? color : AppColors.cardBorder,
-            width: isSelected ? 2 : 1,
-          ),
-          boxShadow: isSelected
-              ? [
-                  BoxShadow(
-                    color: color.withValues(alpha: 0.3),
-                    blurRadius: 8,
-                    spreadRadius: 1,
-                  )
-                ]
-              : null,
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(icon, color: color, size: 16),
-            const SizedBox(width: 6),
-            Text(
-              label,
-              style: TextStyle(
-                color: isSelected ? AppColors.textPrimary : AppColors.textSecondary,
-                fontSize: 13,
-                fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
-              ),
+    // Interactive selection chip (in Review Form)
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: () => onSelected?.call(priority.toLowerCase()),
+        borderRadius: BorderRadius.circular(8),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 180),
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          decoration: BoxDecoration(
+            color: isSelected ? color.withValues(alpha: 0.2) : AppColors.surface,
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(
+              color: isSelected ? color : AppColors.cardBorder,
+              width: isSelected ? 1.5 : 1,
             ),
-          ],
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 7,
+                height: 7,
+                decoration: BoxDecoration(
+                  color: isSelected ? color : AppColors.textMuted,
+                  shape: BoxShape.circle,
+                ),
+              ),
+              const SizedBox(width: 6),
+              Text(
+                label,
+                style: TextStyle(
+                  color: isSelected ? Colors.white : AppColors.textSecondary,
+                  fontSize: 12.5,
+                  fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

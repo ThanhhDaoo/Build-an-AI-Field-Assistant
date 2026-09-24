@@ -10,10 +10,12 @@ import 'ticket_review_screen.dart';
 /// Screen listing inspection tickets with offline/online sync status and filter tabs
 class TicketHistoryScreen extends StatelessWidget {
   final InspectionController controller;
+  final bool embeddedMode;
 
   const TicketHistoryScreen({
     super.key,
     required this.controller,
+    this.embeddedMode = false,
   });
 
   @override
@@ -28,12 +30,15 @@ class TicketHistoryScreen extends StatelessWidget {
           appBar: AppBar(
             backgroundColor: AppColors.background,
             elevation: 0,
-            leading: IconButton(
-              icon: const Icon(Icons.arrow_back_rounded, color: AppColors.textPrimary),
-              onPressed: () => Navigator.of(context).pop(),
-            ),
+            automaticallyImplyLeading: !embeddedMode,
+            leading: embeddedMode
+                ? null
+                : IconButton(
+                    icon: const Icon(Icons.arrow_back_rounded, color: AppColors.textPrimary),
+                    onPressed: () => Navigator.of(context).pop(),
+                  ),
             title: const Text(
-              'Lịch sử biên bản hiện trường',
+              'Biên bản & Đồng bộ',
               style: TextStyle(
                 color: AppColors.textPrimary,
                 fontSize: 16,
@@ -120,7 +125,7 @@ class TicketHistoryScreen extends StatelessWidget {
                       SizedBox(width: 8),
                       Expanded(
                         child: Text(
-                          'Đang hoạt động ngoại tuyến. Các phiếu mới sẽ lưu cục bộ và tự đồng bộ khi có mạng.',
+                          'Đang ngoại tuyến. Dữ liệu lưu cục bộ và sẽ tự động đồng bộ khi có kết nối.',
                           style: TextStyle(
                             color: AppColors.statusPending,
                             fontSize: 11.5,
@@ -138,7 +143,7 @@ class TicketHistoryScreen extends StatelessWidget {
                     : ListView.separated(
                         padding: const EdgeInsets.all(16),
                         itemCount: tickets.length,
-                        separatorBuilder: (context, index) => const SizedBox(height: 12),
+                        separatorBuilder: (context, index) => const SizedBox(height: 10),
                         itemBuilder: (context, index) {
                           final ticket = tickets[index];
                           return _buildTicketCard(context, ticket);
@@ -157,13 +162,13 @@ class TicketHistoryScreen extends StatelessWidget {
     return Expanded(
       child: InkWell(
         onTap: () => controller.setFilter(key),
-        borderRadius: BorderRadius.circular(10),
+        borderRadius: BorderRadius.circular(8),
         child: Container(
           padding: const EdgeInsets.symmetric(vertical: 8),
           alignment: Alignment.center,
           decoration: BoxDecoration(
             color: isSelected ? AppColors.surfaceLight : AppColors.surface,
-            borderRadius: BorderRadius.circular(10),
+            borderRadius: BorderRadius.circular(8),
             border: Border.all(
               color: isSelected ? AppColors.primary : AppColors.cardBorder,
               width: isSelected ? 1.5 : 1,
@@ -192,15 +197,15 @@ class TicketHistoryScreen extends StatelessWidget {
         padding: const EdgeInsets.only(right: 20),
         decoration: BoxDecoration(
           color: AppColors.priorityCritical,
-          borderRadius: BorderRadius.circular(14),
+          borderRadius: BorderRadius.circular(12),
         ),
-        child: const Icon(Icons.delete_forever_rounded, color: Colors.white, size: 28),
+        child: const Icon(Icons.delete_outline_rounded, color: Colors.white, size: 24),
       ),
       confirmDismiss: (_) async {
         return await DialogHelper.showConfirmDialog(
           context,
           title: 'Xóa biên bản này?',
-          message: 'Hành động này không thể hoàn tác.',
+          message: 'Biên bản sẽ bị xóa khỏi cơ sở dữ liệu cục bộ.',
           confirmText: 'Xóa',
           isDestructive: true,
         );
@@ -209,140 +214,142 @@ class TicketHistoryScreen extends StatelessWidget {
         controller.deleteTicket(ticket.id);
         DialogHelper.showSnackBar(context, 'Đã xóa biên bản kiểm tra');
       },
-      child: InkWell(
-        onTap: () {
-          Navigator.of(context).push(
-            MaterialPageRoute(
-              builder: (_) => TicketReviewScreen(
-                controller: controller,
-                initialTicket: ticket,
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: () {
+            Navigator.of(context).push(
+              MaterialPageRoute(
+                builder: (_) => TicketReviewScreen(
+                  controller: controller,
+                  initialTicket: ticket,
+                ),
               ),
+            );
+          },
+          borderRadius: BorderRadius.circular(12),
+          child: Container(
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(
+              color: AppColors.surface,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: AppColors.cardBorder),
             ),
-          );
-        },
-        borderRadius: BorderRadius.circular(14),
-        child: Container(
-          padding: const EdgeInsets.all(14),
-          decoration: BoxDecoration(
-            color: AppColors.surface,
-            borderRadius: BorderRadius.circular(14),
-            border: Border.all(color: AppColors.cardBorder),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Card Header: Priority Badge + Sync Status
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  PriorityBadgeChip(priority: ticket.priority),
-                  Row(
-                    children: [
-                      Icon(
-                        ticket.isSynced
-                            ? Icons.cloud_done_rounded
-                            : Icons.cloud_upload_outlined,
-                        color: ticket.isSynced
-                            ? AppColors.statusSynced
-                            : AppColors.statusPending,
-                        size: 16,
-                      ),
-                      const SizedBox(width: 4),
-                      Text(
-                        ticket.isSynced ? 'Đã sync' : 'Chờ sync',
-                        style: TextStyle(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Priority Badge + Sync Status
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    PriorityBadgeChip(priority: ticket.priority),
+                    Row(
+                      children: [
+                        Icon(
+                          ticket.isSynced
+                              ? Icons.cloud_done_rounded
+                              : Icons.cloud_upload_outlined,
                           color: ticket.isSynced
                               ? AppColors.statusSynced
                               : AppColors.statusPending,
-                          fontSize: 11,
-                          fontWeight: FontWeight.w600,
+                          size: 15,
                         ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-
-              const SizedBox(height: 10),
-
-              // Title
-              Text(
-                ticket.title,
-                style: const TextStyle(
-                  color: AppColors.textPrimary,
-                  fontSize: 15,
-                  fontWeight: FontWeight.bold,
-                ),
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-              ),
-
-              const SizedBox(height: 6),
-
-              // Location
-              Row(
-                children: [
-                  const Icon(Icons.place_rounded, color: AppColors.textMuted, size: 14),
-                  const SizedBox(width: 4),
-                  Expanded(
-                    child: Text(
-                      ticket.location,
-                      style: const TextStyle(
-                        color: AppColors.textSecondary,
-                        fontSize: 12,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
+                        const SizedBox(width: 4),
+                        Text(
+                          ticket.isSynced ? 'Đã sync' : 'Chờ sync',
+                          style: TextStyle(
+                            color: ticket.isSynced
+                                ? AppColors.statusSynced
+                                : AppColors.statusPending,
+                            fontSize: 11,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
                     ),
-                  ),
-                ],
-              ),
-
-              const SizedBox(height: 6),
-
-              // Description snippet
-              Text(
-                ticket.description,
-                style: const TextStyle(
-                  color: AppColors.textMuted,
-                  fontSize: 12,
-                  height: 1.3,
+                  ],
                 ),
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-              ),
 
-              const SizedBox(height: 10),
+                const SizedBox(height: 10),
 
-              // Card Footer: Inspector & Time
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Row(
-                    children: [
-                      const Icon(Icons.person_outline_rounded,
-                          color: AppColors.textMuted, size: 14),
-                      const SizedBox(width: 4),
-                      Text(
-                        ticket.inspectorName,
+                // Title
+                Text(
+                  ticket.title,
+                  style: const TextStyle(
+                    color: AppColors.textPrimary,
+                    fontSize: 14.5,
+                    fontWeight: FontWeight.bold,
+                  ),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
+
+                const SizedBox(height: 6),
+
+                // Location
+                Row(
+                  children: [
+                    const Icon(Icons.place_rounded, color: AppColors.textMuted, size: 14),
+                    const SizedBox(width: 4),
+                    Expanded(
+                      child: Text(
+                        ticket.location,
                         style: const TextStyle(
                           color: AppColors.textSecondary,
-                          fontSize: 11,
-                          fontWeight: FontWeight.w500,
+                          fontSize: 12,
                         ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                       ),
-                    ],
-                  ),
-                  Text(
-                    DateFormatter.formatTimeAgo(ticket.createdAt),
-                    style: const TextStyle(
-                      color: AppColors.textMuted,
-                      fontSize: 11,
                     ),
+                  ],
+                ),
+
+                const SizedBox(height: 8),
+
+                // Snippet
+                Text(
+                  ticket.description,
+                  style: const TextStyle(
+                    color: AppColors.textMuted,
+                    fontSize: 12,
+                    height: 1.3,
                   ),
-                ],
-              ),
-            ],
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
+
+                const SizedBox(height: 10),
+
+                // Footer: Inspector & Time
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Row(
+                      children: [
+                        const Icon(Icons.person_outline_rounded,
+                            color: AppColors.textMuted, size: 13),
+                        const SizedBox(width: 4),
+                        Text(
+                          ticket.inspectorName,
+                          style: const TextStyle(
+                            color: AppColors.textSecondary,
+                            fontSize: 11,
+                          ),
+                        ),
+                      ],
+                    ),
+                    Text(
+                      DateFormatter.formatTimeAgo(ticket.createdAt),
+                      style: const TextStyle(
+                        color: AppColors.textMuted,
+                        fontSize: 11,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
           ),
         ),
       ),
@@ -355,7 +362,7 @@ class TicketHistoryScreen extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           Container(
-            padding: const EdgeInsets.all(20),
+            padding: const EdgeInsets.all(18),
             decoration: BoxDecoration(
               color: AppColors.surface,
               shape: BoxShape.circle,
@@ -364,24 +371,24 @@ class TicketHistoryScreen extends StatelessWidget {
             child: const Icon(
               Icons.assignment_outlined,
               color: AppColors.textMuted,
-              size: 48,
+              size: 40,
             ),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 14),
           const Text(
-            'Chưa có biên bản nào',
+            'Chưa có biên bản nào trong mục này',
             style: TextStyle(
               color: AppColors.textPrimary,
-              fontSize: 16,
+              fontSize: 14,
               fontWeight: FontWeight.bold,
             ),
           ),
-          const SizedBox(height: 6),
+          const SizedBox(height: 4),
           const Text(
-            'Bắt đầu ghi âm hiện trường để tạo phiếu đầu tiên',
+            'Thu âm hoặc tạo biên bản mới để quản lý tại đây',
             style: TextStyle(
               color: AppColors.textMuted,
-              fontSize: 13,
+              fontSize: 12,
             ),
           ),
         ],

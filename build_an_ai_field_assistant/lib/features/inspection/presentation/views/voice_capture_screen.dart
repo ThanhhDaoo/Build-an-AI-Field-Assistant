@@ -1,20 +1,18 @@
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import '../../../../core/constants/app_colors.dart';
-import '../../../../core/constants/app_constants.dart';
-import '../../../../core/utils/dialog_helper.dart';
 import '../controllers/inspection_controller.dart';
 import '../widgets/wave_record_button.dart';
-import 'ticket_history_screen.dart';
 import 'ticket_review_screen.dart';
 
-/// Main Voice Capture Screen for Field Inspectors
+/// Professional Field Audio Logger & Incident Intake Station
 class VoiceCaptureScreen extends StatefulWidget {
   final InspectionController controller;
+  final bool embeddedMode;
 
   const VoiceCaptureScreen({
     super.key,
     required this.controller,
+    this.embeddedMode = false,
   });
 
   @override
@@ -24,103 +22,34 @@ class VoiceCaptureScreen extends StatefulWidget {
 class _VoiceCaptureScreenState extends State<VoiceCaptureScreen> {
   final TextEditingController _quickNoteController = TextEditingController();
 
-  final List<String> _quickScenarios = [
-    'Rò rỉ van dầu áp suất cao tại Phân xưởng cán thép 2, dầu tràn mặt sàn trơn trượt.',
-    'Tủ điện số 4 cạnh kho vật tư có mùi khét nồng, aptomat quá nhiệt phát tia lửa điện.',
-    'Phát hiện nứt kết cấu dầm bê tông tầng 3 Block B, chiều dài vết nứt khoảng 1.5 mét.',
+  final List<Map<String, dynamic>> _commonScenarios = [
+    {
+      'title': 'Rò rỉ van dầu áp suất cao',
+      'location': 'Phân xưởng cán thép 2',
+      'text': 'Phát hiện van dầu áp lực cao tại Phân xưởng cán thép 2 bị nứt gioăng, dầu rỉ tràn sàn có nguy cơ trơn trượt té ngã. Cần thay van DN50 gấp.',
+      'icon': Icons.water_drop_outlined,
+      'color': AppColors.priorityHigh,
+    },
+    {
+      'title': 'Quá nhiệt tủ điện phân phối',
+      'location': 'Tủ điện số 4 - Kho vật tư',
+      'text': 'Tủ điện số 4 cạnh kho vật tư có mùi khét nồng, aptomat quá nhiệt phát tia lửa điện lẹt xẹt, cần ngắt cầu dao tổng khu vực và đội cơ điện xử lý ngay.',
+      'icon': Icons.bolt_outlined,
+      'color': AppColors.priorityCritical,
+    },
+    {
+      'title': 'Nứt kết cấu dầm chịu lực',
+      'location': 'Tầng 3 Block B',
+      'text': 'Phát hiện vết nứt dầm bê tông cốt thép tại trục D tầng 3 Block B, chiều dài khoảng 1.5 mét, cần kỹ sư kết cấu kiểm tra độ an toàn chịu tải.',
+      'icon': Icons.foundation_outlined,
+      'color': AppColors.priorityMedium,
+    },
   ];
 
   @override
   void dispose() {
     _quickNoteController.dispose();
     super.dispose();
-  }
-
-  void _showApiKeyDialog() async {
-    final prefs = await SharedPreferences.getInstance();
-    final currentKey = prefs.getString(AppConstants.keyGeminiApiKey) ?? '';
-    final textController = TextEditingController(text: currentKey);
-
-    if (!mounted) return;
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: AppColors.surface,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-          side: const BorderSide(color: AppColors.cardBorder),
-        ),
-        title: const Row(
-          children: [
-            Icon(Icons.vpn_key_rounded, color: AppColors.primary, size: 22),
-            SizedBox(width: 8),
-            Text(
-              'Cấu hình Gemini API Key',
-              style: TextStyle(
-                color: AppColors.textPrimary,
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-          ],
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              'Nhập Google Gemini API Key để kích hoạt trích xuất thông minh trực tuyến. (Nếu để trống, hệ thống sẽ sử dụng thuật toán NLP offline dự phòng)',
-              style: TextStyle(color: AppColors.textSecondary, fontSize: 13, height: 1.4),
-            ),
-            const SizedBox(height: 16),
-            TextField(
-              controller: textController,
-              obscureText: true,
-              style: const TextStyle(color: AppColors.textPrimary, fontSize: 14),
-              decoration: InputDecoration(
-                hintText: 'AIzaSy...',
-                hintStyle: const TextStyle(color: AppColors.textMuted),
-                filled: true,
-                fillColor: AppColors.background,
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(10),
-                  borderSide: const BorderSide(color: AppColors.cardBorder),
-                ),
-                focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(10),
-                  borderSide: const BorderSide(color: AppColors.primary),
-                ),
-              ),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(),
-            child: const Text('Đóng', style: TextStyle(color: AppColors.textMuted)),
-          ),
-          ElevatedButton(
-            onPressed: () async {
-              await prefs.setString(
-                AppConstants.keyGeminiApiKey,
-                textController.text.trim(),
-              );
-              if (ctx.mounted) {
-                Navigator.of(ctx).pop();
-              }
-              if (mounted) {
-                DialogHelper.showSnackBar(context, 'Đã lưu cấu hình API Key thành công!');
-              }
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.primary,
-              foregroundColor: Colors.white,
-            ),
-            child: const Text('Lưu'),
-          ),
-        ],
-      ),
-    );
   }
 
   void _showTextPromptModal() {
@@ -145,13 +74,19 @@ class _VoiceCaptureScreenState extends State<VoiceCaptureScreen> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Text(
-                  'Nhập ghi chú hiện trường',
-                  style: TextStyle(
-                    color: AppColors.textPrimary,
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                  ),
+                const Row(
+                  children: [
+                    Icon(Icons.edit_note_rounded, color: AppColors.primary, size: 22),
+                    SizedBox(width: 8),
+                    Text(
+                      'Ghi nhận hiện trường thủ công',
+                      style: TextStyle(
+                        color: AppColors.textPrimary,
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
                 ),
                 IconButton(
                   icon: const Icon(Icons.close, color: AppColors.textMuted),
@@ -165,12 +100,12 @@ class _VoiceCaptureScreenState extends State<VoiceCaptureScreen> {
               maxLines: 4,
               style: const TextStyle(color: AppColors.textPrimary),
               decoration: InputDecoration(
-                hintText: 'Nhập hoặc dán ghi chú sự cố tại hiện trường...',
+                hintText: 'Nhập ghi chú hiện trường: Vị trí, thiết bị, hiện trạng...',
                 hintStyle: const TextStyle(color: AppColors.textMuted),
                 filled: true,
                 fillColor: AppColors.background,
                 border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(10),
                   borderSide: const BorderSide(color: AppColors.cardBorder),
                 ),
               ),
@@ -201,13 +136,11 @@ class _VoiceCaptureScreenState extends State<VoiceCaptureScreen> {
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.primary,
                   foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                 ),
-                icon: const Icon(Icons.auto_awesome_rounded),
+                icon: const Icon(Icons.check_rounded),
                 label: const Text(
-                  'AI Phân tích & Trích xuất phiếu',
+                  'Tạo biên bản kiểm tra',
                   style: TextStyle(fontWeight: FontWeight.bold),
                 ),
               ),
@@ -227,198 +160,64 @@ class _VoiceCaptureScreenState extends State<VoiceCaptureScreen> {
 
         return Scaffold(
           backgroundColor: AppColors.background,
-          appBar: AppBar(
-            backgroundColor: AppColors.background,
-            elevation: 0,
-            title: Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(6),
-                  decoration: BoxDecoration(
-                    color: AppColors.primary.withValues(alpha: 0.15),
-                    borderRadius: BorderRadius.circular(8),
+          appBar: widget.embeddedMode
+              ? null
+              : AppBar(
+                  backgroundColor: AppColors.background,
+                  elevation: 0,
+                  leading: IconButton(
+                    icon: const Icon(Icons.arrow_back_rounded, color: AppColors.textPrimary),
+                    onPressed: () => Navigator.of(context).pop(),
                   ),
-                  child: const Icon(
-                    Icons.engineering_rounded,
-                    color: AppColors.primary,
-                    size: 20,
+                  title: const Text(
+                    'Thu âm hiện trường',
+                    style: TextStyle(color: AppColors.textPrimary, fontSize: 16, fontWeight: FontWeight.bold),
                   ),
                 ),
-                const SizedBox(width: 8),
-                const Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        'Field AI Assistant',
-                        style: TextStyle(
-                          color: AppColors.textPrimary,
-                          fontSize: 15,
-                          fontWeight: FontWeight.bold,
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      Text(
-                        'Giám sát Hiện trường',
-                        style: TextStyle(
-                          color: AppColors.textMuted,
-                          fontSize: 10,
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-            actions: [
-              // Online / Offline Status
-              Center(
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: ctrl.isOnline
-                        ? AppColors.primary.withValues(alpha: 0.15)
-                        : AppColors.statusPending.withValues(alpha: 0.15),
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(
-                      color: ctrl.isOnline
-                          ? AppColors.primary.withValues(alpha: 0.4)
-                          : AppColors.statusPending.withValues(alpha: 0.4),
-                    ),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Container(
-                        width: 6,
-                        height: 6,
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          color: ctrl.isOnline ? AppColors.primary : AppColors.statusPending,
-                        ),
-                      ),
-                      const SizedBox(width: 6),
-                      Text(
-                        ctrl.isOnline ? 'Online' : 'Offline',
-                        style: TextStyle(
-                          color: ctrl.isOnline ? AppColors.primary : AppColors.statusPending,
-                          fontSize: 11,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-              const SizedBox(width: 8),
-
-              // Gemini API Key config
-              IconButton(
-                icon: const Icon(Icons.settings_outlined, color: AppColors.textSecondary),
-                tooltip: 'Cài đặt API Key',
-                onPressed: _showApiKeyDialog,
-              ),
-
-              // History Screen Navigation with badge
-              Stack(
-                alignment: Alignment.center,
-                children: [
-                  IconButton(
-                    icon: const Icon(Icons.receipt_long_rounded, color: AppColors.textSecondary),
-                    tooltip: 'Danh sách phiếu',
-                    onPressed: () {
-                      Navigator.of(context).push(
-                        MaterialPageRoute(
-                          builder: (_) => TicketHistoryScreen(controller: ctrl),
-                        ),
-                      );
-                    },
-                  ),
-                  if (ctrl.pendingCount > 0)
-                    Positioned(
-                      top: 8,
-                      right: 8,
-                      child: Container(
-                        padding: const EdgeInsets.all(4),
-                        decoration: const BoxDecoration(
-                          color: AppColors.priorityCritical,
-                          shape: BoxShape.circle,
-                        ),
-                        constraints: const BoxConstraints(
-                          minWidth: 16,
-                          minHeight: 16,
-                        ),
-                        child: Text(
-                          '${ctrl.pendingCount}',
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 10,
-                            fontWeight: FontWeight.bold,
-                          ),
-                          textAlign: TextAlign.center,
-                        ),
-                      ),
-                    ),
-                ],
-              ),
-              const SizedBox(width: 8),
-            ],
-          ),
           body: SafeArea(
             child: SingleChildScrollView(
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
-                  const SizedBox(height: 10),
-
-                  // Header Guidance Card
+                  // Header Title
                   Container(
                     width: double.infinity,
-                    padding: const EdgeInsets.all(16),
+                    padding: const EdgeInsets.all(14),
                     decoration: BoxDecoration(
                       color: AppColors.surface,
-                      borderRadius: BorderRadius.circular(16),
+                      borderRadius: BorderRadius.circular(12),
                       border: Border.all(color: AppColors.cardBorder),
                     ),
                     child: Row(
                       children: [
                         Container(
-                          padding: const EdgeInsets.all(10),
+                          padding: const EdgeInsets.all(8),
                           decoration: BoxDecoration(
-                            color: AppColors.secondary.withValues(alpha: 0.15),
-                            borderRadius: BorderRadius.circular(12),
+                            color: AppColors.primary.withValues(alpha: 0.15),
+                            borderRadius: BorderRadius.circular(8),
                           ),
-                          child: const Icon(
-                            Icons.auto_awesome_rounded,
-                            color: AppColors.secondary,
-                            size: 24,
-                          ),
+                          child: const Icon(Icons.mic_none_rounded, color: AppColors.primary, size: 20),
                         ),
-                        const SizedBox(width: 14),
+                        const SizedBox(width: 12),
                         const Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                'Thu âm & Tự động tạo phiếu',
+                                'Ghi âm mô tả sự cố hiện trường',
                                 style: TextStyle(
                                   color: AppColors.textPrimary,
-                                  fontSize: 15,
+                                  fontSize: 14,
                                   fontWeight: FontWeight.bold,
                                 ),
                               ),
-                              SizedBox(height: 4),
+                              SizedBox(height: 2),
                               Text(
-                                'Nói rõ vị trí, sự cố, nguyên nhân và mức độ nguy hiểm. AI sẽ tự động điền form biên bản.',
+                                'Nêu rõ: Vị trí cụ thể, tên thiết bị, hiện trạng và mức độ nguy cơ.',
                                 style: TextStyle(
-                                  color: AppColors.textSecondary,
-                                  fontSize: 12,
-                                  height: 1.35,
+                                  color: AppColors.textMuted,
+                                  fontSize: 11.5,
                                 ),
                               ),
                             ],
@@ -428,14 +227,15 @@ class _VoiceCaptureScreenState extends State<VoiceCaptureScreen> {
                     ),
                   ),
 
-                  const SizedBox(height: 36),
+                  const SizedBox(height: 32),
 
-                  // Main Audio Wave Record Button
+                  // Center Wave Record Button
                   Center(
                     child: WaveRecordButton(
                       isRecording: ctrl.isRecording,
                       amplitude: ctrl.currentAmplitude,
                       duration: ctrl.recordDuration,
+                      onCancel: () => ctrl.cancelRecording(),
                       onTap: () async {
                         if (ctrl.isRecording) {
                           final ticket = await ctrl.stopRecordingAndExtract();
@@ -457,19 +257,23 @@ class _VoiceCaptureScreenState extends State<VoiceCaptureScreen> {
                     ),
                   ),
 
-                  const SizedBox(height: 24),
+                  const SizedBox(height: 20),
 
-                  // Dynamic Status Text
+                  // Status indicator
                   if (ctrl.state == InspectionViewState.analyzing)
                     const Column(
                       children: [
-                        CircularProgressIndicator(
-                          strokeWidth: 2.5,
-                          valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
+                        SizedBox(
+                          width: 24,
+                          height: 24,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2.5,
+                            valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
+                          ),
                         ),
-                        SizedBox(height: 12),
+                        SizedBox(height: 10),
                         Text(
-                          'Gemini AI đang lắng nghe và trích xuất cấu trúc JSON...',
+                          'Đang xử lý âm thanh & cấu trúc biên bản...',
                           style: TextStyle(
                             color: AppColors.primaryLight,
                             fontSize: 13,
@@ -481,77 +285,50 @@ class _VoiceCaptureScreenState extends State<VoiceCaptureScreen> {
                   else
                     Text(
                       ctrl.isRecording
-                          ? 'Chạm nút dừng để AI phân tích giọng nói'
-                          : 'Chạm biểu tượng micro để bắt đầu nói',
+                          ? 'Nhấn nút vuông đỏ để dừng & lập biên bản'
+                          : 'Nhấn vào micro để bắt đầu ghi âm',
                       style: const TextStyle(
                         color: AppColors.textSecondary,
-                        fontSize: 14,
+                        fontSize: 13,
                         fontWeight: FontWeight.w500,
                       ),
                     ),
 
                   const SizedBox(height: 36),
 
-                  // Quick Action Buttons
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      OutlinedButton.icon(
-                        onPressed: _showTextPromptModal,
-                        style: OutlinedButton.styleFrom(
-                          foregroundColor: AppColors.textPrimary,
-                          side: const BorderSide(color: AppColors.cardBorder),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                        ),
-                        icon: const Icon(Icons.edit_note_rounded, size: 18),
-                        label: const Text('Nhập tay'),
-                      ),
-                      const SizedBox(width: 12),
-                      OutlinedButton.icon(
-                        onPressed: () {
-                          Navigator.of(context).push(
-                            MaterialPageRoute(
-                              builder: (_) => TicketHistoryScreen(controller: ctrl),
-                            ),
-                          );
-                        },
-                        style: OutlinedButton.styleFrom(
-                          foregroundColor: AppColors.textPrimary,
-                          side: const BorderSide(color: AppColors.cardBorder),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                        ),
-                        icon: const Icon(Icons.list_alt_rounded, size: 18),
-                        label: Text('Lịch sử (${ctrl.tickets.length})'),
-                      ),
-                    ],
+                  // Manual Note Button (For noisy environment)
+                  OutlinedButton.icon(
+                    onPressed: _showTextPromptModal,
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: AppColors.textPrimary,
+                      side: const BorderSide(color: AppColors.cardBorder),
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                    ),
+                    icon: const Icon(Icons.keyboard_alt_outlined, size: 16),
+                    label: const Text('Môi trường ồn? Nhập văn bản thủ công', style: TextStyle(fontSize: 12.5)),
                   ),
 
-                  const SizedBox(height: 32),
+                  const SizedBox(height: 30),
 
-                  // Quick Testing Scenarios (Demo Templates)
+                  // Common Inspection Scenarios
                   Container(
                     width: double.infinity,
-                    padding: const EdgeInsets.all(16),
+                    padding: const EdgeInsets.all(14),
                     decoration: BoxDecoration(
-                      color: AppColors.surface.withValues(alpha: 0.6),
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(color: AppColors.cardBorder.withValues(alpha: 0.6)),
+                      color: AppColors.surface,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: AppColors.cardBorder),
                     ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         const Row(
                           children: [
-                            Icon(Icons.bolt_rounded, color: AppColors.primaryLight, size: 18),
+                            Icon(Icons.flash_on_rounded, color: AppColors.primary, size: 16),
                             SizedBox(width: 6),
                             Text(
-                              'Tình huống mẫu thử nghiệm nhanh:',
+                              'Biên bản mẫu thường gặp:',
                               style: TextStyle(
                                 color: AppColors.textPrimary,
                                 fontSize: 13,
@@ -561,52 +338,64 @@ class _VoiceCaptureScreenState extends State<VoiceCaptureScreen> {
                           ],
                         ),
                         const SizedBox(height: 10),
-                        ..._quickScenarios.map(
+                        ..._commonScenarios.map(
                           (scenario) => Padding(
                             padding: const EdgeInsets.only(bottom: 8.0),
-                            child: InkWell(
-                              onTap: () async {
-                                final ticket = await ctrl.extractFromText(scenario);
-                                if (!context.mounted) return;
-                                if (ticket != null) {
-                                  Navigator.of(context).push(
-                                    MaterialPageRoute(
-                                      builder: (_) => TicketReviewScreen(
-                                        controller: ctrl,
-                                        initialTicket: ticket,
-                                      ),
-                                    ),
-                                  );
-                                }
-                              },
-                              borderRadius: BorderRadius.circular(8),
-                              child: Container(
-                                padding: const EdgeInsets.all(10),
-                                decoration: BoxDecoration(
-                                  color: AppColors.background.withValues(alpha: 0.6),
-                                  borderRadius: BorderRadius.circular(8),
-                                  border: Border.all(color: AppColors.cardBorder.withValues(alpha: 0.4)),
-                                ),
-                                child: Row(
-                                  children: [
-                                    Expanded(
-                                      child: Text(
-                                        scenario,
-                                        style: const TextStyle(
-                                          color: AppColors.textSecondary,
-                                          fontSize: 12,
-                                          height: 1.3,
+                            child: Material(
+                              color: Colors.transparent,
+                              child: InkWell(
+                                onTap: () async {
+                                  final ticket = await ctrl.extractFromText(scenario['text'] as String);
+                                  if (!context.mounted) return;
+                                  if (ticket != null) {
+                                    Navigator.of(context).push(
+                                      MaterialPageRoute(
+                                        builder: (_) => TicketReviewScreen(
+                                          controller: ctrl,
+                                          initialTicket: ticket,
                                         ),
-                                        maxLines: 2,
-                                        overflow: TextOverflow.ellipsis,
                                       ),
-                                    ),
-                                    const Icon(
-                                      Icons.arrow_forward_ios_rounded,
-                                      color: AppColors.textMuted,
-                                      size: 12,
-                                    ),
-                                  ],
+                                    );
+                                  }
+                                },
+                                borderRadius: BorderRadius.circular(8),
+                                child: Container(
+                                  padding: const EdgeInsets.all(10),
+                                  decoration: BoxDecoration(
+                                    color: AppColors.background,
+                                    borderRadius: BorderRadius.circular(8),
+                                    border: Border.all(color: AppColors.cardBorder),
+                                  ),
+                                  child: Row(
+                                    children: [
+                                      Icon(scenario['icon'] as IconData, color: scenario['color'] as Color, size: 20),
+                                      const SizedBox(width: 10),
+                                      Expanded(
+                                        child: Column(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          children: [
+                                            Text(
+                                              scenario['title'] as String,
+                                              style: const TextStyle(
+                                                color: AppColors.textPrimary,
+                                                fontSize: 12.5,
+                                                fontWeight: FontWeight.w600,
+                                              ),
+                                            ),
+                                            const SizedBox(height: 2),
+                                            Text(
+                                              scenario['location'] as String,
+                                              style: const TextStyle(
+                                                color: AppColors.textMuted,
+                                                fontSize: 11,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                      const Icon(Icons.arrow_forward_ios_rounded, color: AppColors.textMuted, size: 12),
+                                    ],
+                                  ),
                                 ),
                               ),
                             ),
@@ -615,6 +404,8 @@ class _VoiceCaptureScreenState extends State<VoiceCaptureScreen> {
                       ],
                     ),
                   ),
+
+                  const SizedBox(height: 20),
                 ],
               ),
             ),
