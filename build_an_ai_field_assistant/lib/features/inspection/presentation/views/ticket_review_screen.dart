@@ -37,7 +37,6 @@ class _TicketReviewScreenState extends State<TicketReviewScreen> {
   late String _selectedPriority;
   late String _selectedCategory;
   bool _isSubmitting = false;
-  final bool _showRawTranscript = false;
 
   @override
   void initState() {
@@ -205,6 +204,69 @@ class _TicketReviewScreenState extends State<TicketReviewScreen> {
                 const SizedBox(height: 16),
               ],
 
+              // Speech-to-Text Extracted Transcript Card
+              if (widget.initialTicket.rawTranscript != null &&
+                  widget.initialTicket.rawTranscript!.isNotEmpty) ...[
+                _buildCardContainer(
+                  title: 'VĂN BẢN BÓC BĂNG GIỌNG NÓI (TRANSCRIPT)',
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Row(
+                          children: [
+                            Icon(Icons.record_voice_over_rounded, color: AppColors.primary, size: 16),
+                            SizedBox(width: 6),
+                            Text(
+                              'Lời thoại nhận diện từ âm thanh:',
+                              style: TextStyle(
+                                color: AppColors.textSecondary,
+                                fontSize: 12,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ],
+                        ),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: AppColors.primary.withValues(alpha: 0.15),
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                          child: const Text(
+                            'Trích xuất tự động',
+                            style: TextStyle(
+                              color: AppColors.primary,
+                              fontSize: 10.5,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 10),
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: AppColors.background,
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: AppColors.cardBorder),
+                      ),
+                      child: Text(
+                        widget.initialTicket.rawTranscript!,
+                        style: const TextStyle(
+                          color: AppColors.textPrimary,
+                          fontSize: 13,
+                          height: 1.45,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+              ],
+
               // Card Section 1: Thông tin cơ bản
               _buildCardContainer(
                 title: 'THÔNG TIN SỰ CỐ',
@@ -322,46 +384,7 @@ class _TicketReviewScreenState extends State<TicketReviewScreen> {
 
               const SizedBox(height: 16),
 
-              // Transcript Preview (if available)
-              if (widget.initialTicket.rawTranscript != null &&
-                  widget.initialTicket.rawTranscript!.isNotEmpty) ...[
-                Theme(
-                  data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
-                  child: ExpansionTile(
-                    tilePadding: EdgeInsets.zero,
-                    initiallyExpanded: _showRawTranscript,
-                    title: const Text(
-                      'Bản ghi âm giọng nói thô (Transcript)',
-                      style: TextStyle(
-                        color: AppColors.secondary,
-                        fontSize: 12.5,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    children: [
-                      Container(
-                        width: double.infinity,
-                        padding: const EdgeInsets.all(12),
-                        decoration: BoxDecoration(
-                          color: AppColors.surface,
-                          borderRadius: BorderRadius.circular(8),
-                          border: Border.all(color: AppColors.cardBorder),
-                        ),
-                        child: Text(
-                          widget.initialTicket.rawTranscript!,
-                          style: const TextStyle(
-                            color: AppColors.textSecondary,
-                            fontSize: 12,
-                            fontStyle: FontStyle.italic,
-                            height: 1.4,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 20),
-              ],
+
 
               // Swipe to Submit / Confirm Action
               SwipeToSubmitButton(

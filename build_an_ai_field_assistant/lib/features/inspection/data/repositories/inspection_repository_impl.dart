@@ -43,18 +43,26 @@ class InspectionRepositoryImpl implements IInspectionRepository {
   }) async {
     final apiKey = await _getSavedApiKey();
 
-    // If real audio file is present and no manual transcript was provided, use Gemini Multimodal Audio analysis
-    if (audioPath.isNotEmpty && (audioTranscript == null || audioTranscript.trim().isEmpty)) {
+    // 1. If Gemini API key is available and audio exists, use Gemini Multimodal Audio analysis
+    if (apiKey != null && apiKey.trim().isNotEmpty && audioPath.isNotEmpty) {
       return await remoteDataSource.extractTicketFromAudio(
         audioPath: audioPath,
         apiKey: apiKey,
+        userNote: audioTranscript,
       );
     }
 
-    final transcript = (audioTranscript != null && audioTranscript.trim().isNotEmpty)
-        ? audioTranscript
-        : 'Ghi âm hiện trường tại địa điểm kiểm tra.';
-    return extractTicketFromText(transcript, audioPath: audioPath);
+    // 2. If we have a transcribed text from device Speech-to-Text, extract ticket from text
+    if (audioTranscript != null && audioTranscript.trim().isNotEmpty) {
+      return extractTicketFromText(audioTranscript, audioPath: audioPath);
+    }
+
+    // 3. Fallback when offline / without Gemini API key and no words recognized
+    return await remoteDataSource.extractTicketFromAudio(
+      audioPath: audioPath,
+      apiKey: apiKey,
+      userNote: audioTranscript,
+    );
   }
 
   @override

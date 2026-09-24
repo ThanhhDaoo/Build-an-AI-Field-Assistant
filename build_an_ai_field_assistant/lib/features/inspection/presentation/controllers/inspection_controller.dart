@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 import '../../../../core/errors/exceptions.dart';
 import '../../../../core/services/audio_recorder_service.dart';
 import '../../../../core/services/connectivity_service.dart';
+import '../../../../core/services/speech_to_text_service.dart';
 import '../../domain/entities/inspection_ticket.dart';
 import '../../domain/repositories/i_inspection_repository.dart';
 
@@ -19,6 +20,7 @@ class InspectionController extends ChangeNotifier {
   final IInspectionRepository repository;
   final AudioRecorderService audioRecorderService;
   final ConnectivityService connectivityService;
+  final SpeechToTextService? speechToTextService;
 
   // Subscriptions
   StreamSubscription<double>? _amplitudeSubscription;
@@ -71,10 +73,20 @@ class InspectionController extends ChangeNotifier {
   InspectionTicket? _currentDraftTicket;
   InspectionTicket? get currentDraftTicket => _currentDraftTicket;
 
+  // Live Speech Recognition Transcript
+  String _liveTranscript = '';
+  String get liveTranscript => _liveTranscript;
+
+  void setLiveTranscript(String text) {
+    _liveTranscript = text;
+    notifyListeners();
+  }
+
   InspectionController({
     required this.repository,
     required this.audioRecorderService,
     required this.connectivityService,
+    this.speechToTextService,
   }) {
     _init();
   }
@@ -120,11 +132,21 @@ class InspectionController extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// Start Recording Voice Note (.m4a or .wav)
+  /// Start Recording Voice Note (.m4a or .wav) & activate live speech transcription
   Future<void> startRecording({AudioOutputFormat format = AudioOutputFormat.m4a}) async {
     _errorMessage = null;
+    _liveTranscript = '';
     try {
       await audioRecorderService.startRecording(format: format);
+      // Start real-time speech recognition simultaneously
+      try {
+        speechToTextService?.startListening(onResult: (words) {
+          _liveTranscript = words;
+          notifyListeners();
+        });
+      } catch (e) {
+        debugPrint('STT listening skipped: $e');
+      }
       _state = InspectionViewState.recording;
       notifyListeners();
     } on MicrophonePermissionException catch (e) {
@@ -144,12 +166,26 @@ class InspectionController extends ChangeNotifier {
   Future<InspectionTicket?> stopRecordingAndExtract({String? mockSpeechText}) async {
     try {
       final audioPath = await audioRecorderService.stopRecording();
+      String sttWords = '';
+      try {
+        if (speechToTextService != null) {
+          sttWords = await speechToTextService!.stopListening();
+        }
+      } catch (e) {
+        debugPrint('STT stop skipped: $e');
+      }
+
       _state = InspectionViewState.analyzing;
       notifyListeners();
 
+      // Resolve final transcript from mock input or live recognized words
+      final transcriptToUse = (mockSpeechText != null && mockSpeechText.isNotEmpty)
+          ? mockSpeechText
+          : (sttWords.isNotEmpty ? sttWords : (_liveTranscript.isNotEmpty ? _liveTranscript : null));
+
       final extractedTicket = await repository.extractTicketFromVoice(
         audioPath: audioPath ?? '',
-        audioTranscript: mockSpeechText,
+        audioTranscript: transcriptToUse,
       );
 
       _currentDraftTicket = extractedTicket;
@@ -167,9 +203,13 @@ class InspectionController extends ChangeNotifier {
   /// Cancel current recording
   Future<void> cancelRecording() async {
     await audioRecorderService.cancelRecording();
+    try {
+      await speechToTextService?.cancelListening();
+    } catch (_) {}
     _state = InspectionViewState.idle;
     _currentAmplitude = 0.0;
     _recordDuration = Duration.zero;
+    _liveTranscript = '';
     notifyListeners();
   }
 

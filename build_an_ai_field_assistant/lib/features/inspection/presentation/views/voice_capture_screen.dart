@@ -55,6 +55,38 @@ class _VoiceCaptureScreenState extends State<VoiceCaptureScreen> {
     super.dispose();
   }
 
+  Widget _buildSpeechChip(InspectionController ctrl, String text) {
+    return InkWell(
+      onTap: () {
+        ctrl.setLiveTranscript(text);
+      },
+      borderRadius: BorderRadius.circular(6),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+        decoration: BoxDecoration(
+          color: AppColors.background,
+          borderRadius: BorderRadius.circular(6),
+          border: Border.all(color: AppColors.cardBorder),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(Icons.mic_none_rounded, size: 12, color: AppColors.primary),
+            const SizedBox(width: 4),
+            Text(
+              text,
+              style: const TextStyle(
+                color: AppColors.textPrimary,
+                fontSize: 10.5,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   void _showTextPromptModal() {
     showModalBottomSheet(
       context: context,
@@ -279,6 +311,100 @@ class _VoiceCaptureScreenState extends State<VoiceCaptureScreen> {
 
                   const SizedBox(height: 20),
 
+                  // Live Speech-to-Text Transcription Box (While Recording)
+                  if (ctrl.isRecording) ...[
+                    Container(
+                      width: double.infinity,
+                      margin: const EdgeInsets.symmetric(horizontal: 4),
+                      padding: const EdgeInsets.all(14),
+                      decoration: BoxDecoration(
+                        color: AppColors.surface,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                          color: ctrl.liveTranscript.isNotEmpty
+                              ? AppColors.primary
+                              : AppColors.cardBorder,
+                          width: 1.5,
+                        ),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Container(
+                                width: 8,
+                                height: 8,
+                                decoration: const BoxDecoration(
+                                  color: AppColors.primary,
+                                  shape: BoxShape.circle,
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              const Text(
+                                'BÓC BĂNG TRỰC TIẾP (SPEECH-TO-TEXT)',
+                                style: TextStyle(
+                                  color: AppColors.primary,
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.bold,
+                                  letterSpacing: 0.6,
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            ctrl.liveTranscript.isNotEmpty
+                                ? ctrl.liveTranscript
+                                : 'Đang lắng nghe giọng nói... Hãy mô tả sự cố (ví dụ: "Bơm áp lực bị kẹt puly kêu to")',
+                            style: TextStyle(
+                              color: ctrl.liveTranscript.isNotEmpty
+                                  ? AppColors.textPrimary
+                                  : AppColors.textMuted,
+                              fontSize: 13,
+                              fontWeight: ctrl.liveTranscript.isNotEmpty
+                                  ? FontWeight.w500
+                                  : FontWeight.normal,
+                              fontStyle: ctrl.liveTranscript.isNotEmpty
+                                  ? FontStyle.normal
+                                  : FontStyle.italic,
+                              height: 1.4,
+                            ),
+                          ),
+                          const SizedBox(height: 10),
+                          const Text(
+                            'Gợi ý nhanh cho máy ảo / giả lập:',
+                            style: TextStyle(
+                              color: AppColors.textSecondary,
+                              fontSize: 11,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                          const SizedBox(height: 6),
+                          Wrap(
+                            spacing: 6,
+                            runSpacing: 6,
+                            children: [
+                              _buildSpeechChip(
+                                ctrl,
+                                'Puly máy bơm số 2 bị nứt vỡ kêu to',
+                              ),
+                              _buildSpeechChip(
+                                ctrl,
+                                'Rò rỉ van dầu DN50 phân xưởng cán thép',
+                              ),
+                              _buildSpeechChip(
+                                ctrl,
+                                'Aptomat tủ điện tổng quá nhiệt bốc khói',
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                  ],
+
                   // Status indicator
                   if (ctrl.state == InspectionViewState.analyzing)
                     const Column(
@@ -314,7 +440,7 @@ class _VoiceCaptureScreenState extends State<VoiceCaptureScreen> {
                       ),
                     ),
 
-                  const SizedBox(height: 36),
+                  const SizedBox(height: 28),
 
                   // Manual Note Button (For noisy environment)
                   OutlinedButton.icon(
