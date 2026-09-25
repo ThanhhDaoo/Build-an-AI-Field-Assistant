@@ -464,16 +464,16 @@ flutter test
 ### 8.3. Kết Quả Đóng Gói Bản Web Release:
 ```bash
 flutter build web --release
-# ✓ Built build/web (57.2s)
+# ✓ Built build/web (23.4s)
 ```
-- Thư mục đầu ra `build/web/` đầy đủ các file triển khai SPA, sẵn sàng cho Vercel / Firebase Hosting.
+- Thư mục đầu ra `build/web/` đầy đủ các file triển khai SPA (`index.html`, `main.dart.js`, `canvaskit`, `flutter_bootstrap.js`), sẵn sàng cho Vercel / Firebase Hosting.
 
 ### 8.4. Kết Quả Đóng Gói Bản Android APK Release:
 ```bash
 flutter build apk --release
-# ✓ Built build/app/outputs/flutter-apk/app-release.apk (53.6MB)
+# ✓ Built build/app/outputs/flutter-apk/app-release.apk (54.6MB)
 ```
-- File APK thành phẩm độc lập `app-release.apk` dung lượng 53.6MB, sẵn sàng cài đặt và chạy thử trên mọi thiết bị Android vật lý.
+- File APK thành phẩm độc lập `app-release.apk` dung lượng 54.6MB, sẵn sàng cài đặt và chạy thử trên mọi thiết bị Android vật lý.
 
 ---
 
