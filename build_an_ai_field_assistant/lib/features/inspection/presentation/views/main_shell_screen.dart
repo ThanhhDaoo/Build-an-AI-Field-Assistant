@@ -294,6 +294,7 @@ class _DashboardTabView extends StatefulWidget {
 class _DashboardTabViewState extends State<_DashboardTabView> {
   String _searchQuery = '';
   final TextEditingController _searchController = TextEditingController();
+  String _activeFilter = 'all'; // 'all', 'pending', 'critical'
 
   @override
   void dispose() {
@@ -403,10 +404,20 @@ class _DashboardTabViewState extends State<_DashboardTabView> {
     final allTickets = ctrl.tickets;
     final criticalCount = allTickets.where((t) => t.priority.toLowerCase() == 'critical').length;
 
+    // Filter by active category segment & search query
+    final filteredByFilter = allTickets.where((t) {
+      if (_activeFilter == 'pending') {
+        return !t.isSynced;
+      } else if (_activeFilter == 'critical') {
+        return t.priority.toLowerCase() == 'critical';
+      }
+      return true;
+    }).toList();
+
     // Filter by search
     final displayedTickets = _searchQuery.isEmpty
-        ? allTickets
-        : allTickets.where((t) {
+        ? filteredByFilter
+        : filteredByFilter.where((t) {
             final q = _searchQuery.toLowerCase();
             return t.title.toLowerCase().contains(q) ||
                 t.location.toLowerCase().contains(q) ||
@@ -513,31 +524,77 @@ class _DashboardTabViewState extends State<_DashboardTabView> {
                 children: [
                   const SizedBox(height: 6),
 
-                  // Quick Stats Grid
-                  Row(
-                    children: [
-                      _buildStatCard(
-                        title: 'Tổng phiếu',
-                        count: '${allTickets.length}',
-                        icon: Icons.assignment_outlined,
-                        color: AppColors.secondary,
+                  // Enterprise Segmented Metric Bar (Thanh chỉ số phân đoạn liền mạch)
+                  Container(
+                    decoration: BoxDecoration(
+                      color: AppColors.surface,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: AppColors.cardBorder),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.02),
+                          blurRadius: 6,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(11),
+                      child: IntrinsicHeight(
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            // 1. Total Tickets Segment
+                            Expanded(
+                              child: _buildMetricSegment(
+                                label: 'TỔNG PHIẾU',
+                                count: allTickets.length,
+                                statusText: 'Tất cả biên bản',
+                                statusColor: AppColors.textSecondary,
+                                isSelected: _activeFilter == 'all',
+                                onTap: () => setState(() => _activeFilter = 'all'),
+                              ),
+                            ),
+                            const VerticalDivider(
+                              width: 1,
+                              thickness: 1,
+                              color: AppColors.cardBorder,
+                            ),
+                            // 2. Pending Sync Segment
+                            Expanded(
+                              child: _buildMetricSegment(
+                                label: 'CHỜ ĐỒNG BỘ',
+                                count: ctrl.pendingCount,
+                                statusText: ctrl.pendingCount > 0 ? '${ctrl.pendingCount} chờ gửi' : 'Đã khớp cloud',
+                                statusColor: ctrl.pendingCount > 0 ? AppColors.statusPending : AppColors.primary,
+                                hasIndicatorDot: true,
+                                dotColor: ctrl.pendingCount > 0 ? AppColors.statusPending : AppColors.primary,
+                                isSelected: _activeFilter == 'pending',
+                                onTap: () => setState(() => _activeFilter = 'pending'),
+                              ),
+                            ),
+                            const VerticalDivider(
+                              width: 1,
+                              thickness: 1,
+                              color: AppColors.cardBorder,
+                            ),
+                            // 3. Critical Tickets Segment
+                            Expanded(
+                              child: _buildMetricSegment(
+                                label: 'KHẨN CẤP',
+                                count: criticalCount,
+                                statusText: criticalCount > 0 ? '$criticalCount cần xử lý' : 'Ổn định',
+                                statusColor: criticalCount > 0 ? AppColors.priorityCritical : AppColors.textMuted,
+                                hasIndicatorDot: criticalCount > 0,
+                                dotColor: AppColors.priorityCritical,
+                                isSelected: _activeFilter == 'critical',
+                                onTap: () => setState(() => _activeFilter = 'critical'),
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
-                      const SizedBox(width: 10),
-                      _buildStatCard(
-                        title: 'Chờ đồng bộ',
-                        count: '${ctrl.pendingCount}',
-                        icon: Icons.cloud_upload_outlined,
-                        color: AppColors.statusPending,
-                        highlight: ctrl.pendingCount > 0,
-                      ),
-                      const SizedBox(width: 10),
-                      _buildStatCard(
-                        title: 'Khẩn cấp',
-                        count: '$criticalCount',
-                        icon: Icons.warning_amber_rounded,
-                        color: AppColors.priorityCritical,
-                      ),
-                    ],
+                    ),
                   ),
 
                   const SizedBox(height: 18),
@@ -619,13 +676,41 @@ class _DashboardTabViewState extends State<_DashboardTabView> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Text(
-                        'Danh sách biên bản gần đây',
-                        style: TextStyle(
-                          color: AppColors.textPrimary,
-                          fontSize: 14,
-                          fontWeight: FontWeight.bold,
-                        ),
+                      Row(
+                        children: [
+                          const Text(
+                            'Danh sách biên bản',
+                            style: TextStyle(
+                              color: AppColors.textPrimary,
+                              fontSize: 14,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          if (_activeFilter != 'all') ...[
+                            const SizedBox(width: 8),
+                            GestureDetector(
+                              onTap: () => setState(() => _activeFilter = 'all'),
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                                decoration: BoxDecoration(
+                                  color: AppColors.cardBorder.withValues(alpha: 0.7),
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Text(
+                                      _activeFilter == 'pending' ? 'Chờ sync' : 'Khẩn cấp',
+                                      style: const TextStyle(fontSize: 11, color: AppColors.textPrimary, fontWeight: FontWeight.w600),
+                                    ),
+                                    const SizedBox(width: 3),
+                                    const Icon(Icons.close_rounded, size: 12, color: AppColors.textSecondary),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ],
+                        ],
                       ),
                       if (ctrl.pendingCount > 0 && ctrl.isOnline)
                         GestureDetector(
@@ -703,52 +788,85 @@ class _DashboardTabViewState extends State<_DashboardTabView> {
     );
   }
 
-  Widget _buildStatCard({
-    required String title,
-    required String count,
-    required IconData icon,
-    required Color color,
-    bool highlight = false,
+  Widget _buildMetricSegment({
+    required String label,
+    required int count,
+    required String statusText,
+    required Color statusColor,
+    bool hasIndicatorDot = false,
+    Color? dotColor,
+    required bool isSelected,
+    required VoidCallback onTap,
   }) {
-    return Expanded(
-      child: Container(
-        padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(
-          color: AppColors.surface,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-            color: highlight ? color.withValues(alpha: 0.5) : AppColors.cardBorder,
-            width: highlight ? 1.5 : 1,
+    return Material(
+      color: isSelected ? AppColors.primary.withValues(alpha: 0.05) : Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+          decoration: BoxDecoration(
+            border: isSelected
+                ? const Border(
+                    bottom: BorderSide(color: AppColors.primary, width: 2.5),
+                  )
+                : null,
           ),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Icon(icon, color: color, size: 18),
-                Text(
-                  count,
-                  style: TextStyle(
-                    color: AppColors.textPrimary,
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                  ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                label,
+                style: TextStyle(
+                  color: isSelected ? AppColors.primary : AppColors.textSecondary,
+                  fontSize: 10,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: 0.5,
                 ),
-              ],
-            ),
-            const SizedBox(height: 6),
-            Text(
-              title,
-              style: const TextStyle(
-                color: AppColors.textMuted,
-                fontSize: 11,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
               ),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
-          ],
+              const SizedBox(height: 6),
+              Text(
+                count < 10 ? '0$count' : '$count',
+                style: const TextStyle(
+                  color: AppColors.textPrimary,
+                  fontSize: 22,
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: -0.5,
+                  height: 1.15,
+                ),
+              ),
+              const SizedBox(height: 5),
+              Row(
+                children: [
+                  if (hasIndicatorDot) ...[
+                    Container(
+                      width: 5,
+                      height: 5,
+                      decoration: BoxDecoration(
+                        color: dotColor ?? statusColor,
+                        shape: BoxShape.circle,
+                      ),
+                    ),
+                    const SizedBox(width: 4),
+                  ],
+                  Flexible(
+                    child: Text(
+                      statusText,
+                      style: TextStyle(
+                        color: statusColor,
+                        fontSize: 10.5,
+                        fontWeight: FontWeight.w600,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
         ),
       ),
     );
