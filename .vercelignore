@@ -1,0 +1,6 @@
+build_an_ai_field_assistant/
+.git/
+.idea/
+.DS_Store
+*.md
+firebase.json
