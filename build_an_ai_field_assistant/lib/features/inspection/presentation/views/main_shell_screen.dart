@@ -760,6 +760,39 @@ class _DashboardTabViewState extends State<_DashboardTabView> {
     required bool isSelected,
     required VoidCallback onTap,
   }) {
+    // Theme-harmonized accent color based on filter type
+    final Color activeAccent = isCritical && count > 0
+        ? AppColors.priorityCritical
+        : (isPending && count > 0 ? AppColors.statusPending : AppColors.primary);
+
+    final Color backgroundColor = isSelected
+        ? activeAccent.withValues(alpha: 0.1)
+        : AppColors.surface;
+
+    final Color borderColor = isSelected
+        ? activeAccent
+        : AppColors.cardBorder;
+
+    final Color textColor = isSelected
+        ? activeAccent
+        : AppColors.textSecondary;
+
+    final Color badgeBg = isSelected
+        ? activeAccent
+        : (isCritical && count > 0
+            ? AppColors.priorityCritical.withValues(alpha: 0.12)
+            : (isPending && count > 0
+                ? AppColors.statusPending.withValues(alpha: 0.12)
+                : AppColors.surfaceLight));
+
+    final Color badgeTextColor = isSelected
+        ? Colors.white
+        : (isCritical && count > 0
+            ? AppColors.priorityCritical
+            : (isPending && count > 0
+                ? AppColors.statusPending
+                : AppColors.textSecondary));
+
     return Material(
       color: Colors.transparent,
       child: InkWell(
@@ -769,11 +802,11 @@ class _DashboardTabViewState extends State<_DashboardTabView> {
           duration: const Duration(milliseconds: 150),
           padding: const EdgeInsets.symmetric(vertical: 9, horizontal: 8),
           decoration: BoxDecoration(
-            color: isSelected ? AppColors.textPrimary : AppColors.surface,
+            color: backgroundColor,
             borderRadius: BorderRadius.circular(10),
             border: Border.all(
-              color: isSelected ? AppColors.textPrimary : AppColors.cardBorder,
-              width: 1,
+              color: borderColor,
+              width: isSelected ? 1.5 : 1,
             ),
             boxShadow: [
               BoxShadow(
@@ -790,8 +823,8 @@ class _DashboardTabViewState extends State<_DashboardTabView> {
                 label,
                 style: TextStyle(
                   fontSize: 12,
-                  fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
-                  color: isSelected ? Colors.white : AppColors.textSecondary,
+                  fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                  color: textColor,
                 ),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
@@ -800,13 +833,7 @@ class _DashboardTabViewState extends State<_DashboardTabView> {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1.5),
                 decoration: BoxDecoration(
-                  color: isSelected
-                      ? Colors.white.withValues(alpha: 0.2)
-                      : (isCritical && count > 0
-                          ? AppColors.priorityCritical.withValues(alpha: 0.12)
-                          : (isPending && count > 0
-                              ? AppColors.statusPending.withValues(alpha: 0.12)
-                              : AppColors.surfaceLight)),
+                  color: badgeBg,
                   borderRadius: BorderRadius.circular(10),
                 ),
                 child: Text(
@@ -814,13 +841,7 @@ class _DashboardTabViewState extends State<_DashboardTabView> {
                   style: TextStyle(
                     fontSize: 11,
                     fontWeight: FontWeight.w700,
-                    color: isSelected
-                        ? Colors.white
-                        : (isCritical && count > 0
-                            ? AppColors.priorityCritical
-                            : (isPending && count > 0
-                                ? AppColors.statusPending
-                                : AppColors.textPrimary)),
+                    color: badgeTextColor,
                   ),
                 ),
               ),
