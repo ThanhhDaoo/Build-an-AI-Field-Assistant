@@ -12,6 +12,7 @@ import '../../../../core/utils/date_formatter.dart';
 import '../../../../core/utils/dialog_helper.dart';
 import '../../domain/entities/inspection_ticket.dart';
 import '../controllers/inspection_controller.dart';
+import '../widgets/in_app_sync_banner.dart';
 import '../widgets/swipe_to_submit_btn.dart';
 
 /// Professional Field Inspection Report Review Form
@@ -43,6 +44,35 @@ class _TicketReviewScreenState extends State<TicketReviewScreen> {
   late List<InspectionPart> _requiredParts;
   String? _currentImagePath;
   bool _isSubmitting = false;
+  bool _isFetchingGps = false;
+
+  Future<void> _fetchAndApplyGps() async {
+    setState(() => _isFetchingGps = true);
+    try {
+      final loc = await widget.controller.fetchGpsLocation();
+      if (loc != null && mounted) {
+        if (_locationController.text.trim().isEmpty || _locationController.text.contains('chưa rõ')) {
+          _locationController.text = loc;
+        } else if (!_locationController.text.contains('GPS')) {
+          _locationController.text = '${_locationController.text.trim()} - $loc';
+        }
+        DialogHelper.showSnackBar(context, '📍 Đã lấy tọa độ GPS thành công: $loc');
+      } else if (mounted) {
+        DialogHelper.showSnackBar(
+          context,
+          '⚠️ Không thể lấy tọa độ GPS. Vui lòng kiểm tra quyền và bật GPS thiết bị.',
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        DialogHelper.showSnackBar(context, '⚠️ Lỗi GPS: $e');
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isFetchingGps = false);
+      }
+    }
+  }
 
   @override
   void initState() {
@@ -599,6 +629,7 @@ class _TicketReviewScreenState extends State<TicketReviewScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              InAppSyncBanner(controller: widget.controller),
               // Ticket Metadata Strip
               Container(
                 width: double.infinity,
@@ -1063,14 +1094,64 @@ class _TicketReviewScreenState extends State<TicketReviewScreen> {
                     style: const TextStyle(color: AppColors.textPrimary, fontSize: 14, fontWeight: FontWeight.w600),
                     decoration: _inputDecoration(hint: 'Nhập tiêu đề sự cố...'),
                   ),
-                  const SizedBox(height: 14),
-                  _buildFieldLabel('Vị trí hiện trường'),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      _buildFieldLabel('Vị trí hiện trường'),
+                      InkWell(
+                        onTap: _isFetchingGps ? null : _fetchAndApplyGps,
+                        borderRadius: BorderRadius.circular(16),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: AppColors.primary.withValues(alpha: 0.12),
+                            borderRadius: BorderRadius.circular(16),
+                            border: Border.all(
+                              color: AppColors.primary.withValues(alpha: 0.4),
+                              width: 1,
+                            ),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              if (_isFetchingGps)
+                                const SizedBox(
+                                  width: 12,
+                                  height: 12,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    color: AppColors.primary,
+                                  ),
+                                )
+                              else
+                                const Icon(Icons.my_location_rounded, size: 13, color: AppColors.primary),
+                              const SizedBox(width: 5),
+                              Text(
+                                _isFetchingGps ? 'Đang định vị...' : '📍 GPS 1-chạm',
+                                style: const TextStyle(
+                                  color: AppColors.primary,
+                                  fontSize: 11.5,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 6),
                   TextField(
                     controller: _locationController,
                     style: const TextStyle(color: AppColors.textPrimary, fontSize: 13.5),
                     decoration: _inputDecoration(
                       hint: 'Ví dụ: Phân xưởng cán thép 2, Trạm biến áp T1...',
                       prefixIcon: Icons.place_rounded,
+                      suffixIcon: IconButton(
+                        icon: const Icon(Icons.gps_fixed_rounded, size: 18, color: AppColors.primary),
+                        tooltip: 'Lấy tọa độ GPS 1-chạm',
+                        onPressed: _isFetchingGps ? null : _fetchAndApplyGps,
+                      ),
                     ),
                   ),
                   const SizedBox(height: 14),
@@ -1258,13 +1339,18 @@ class _TicketReviewScreenState extends State<TicketReviewScreen> {
     );
   }
 
-  InputDecoration _inputDecoration({required String hint, IconData? prefixIcon}) {
+  InputDecoration _inputDecoration({
+    required String hint,
+    IconData? prefixIcon,
+    Widget? suffixIcon,
+  }) {
     return InputDecoration(
       hintText: hint,
       hintStyle: const TextStyle(color: AppColors.textMuted, fontSize: 13),
       filled: true,
       fillColor: AppColors.background,
       prefixIcon: prefixIcon != null ? Icon(prefixIcon, color: AppColors.textMuted, size: 18) : null,
+      suffixIcon: suffixIcon,
       contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 11),
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(8),

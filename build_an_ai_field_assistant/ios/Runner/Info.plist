@@ -72,5 +72,9 @@
 	<string>Ứng dụng cần truy cập thư viện để chọn ảnh sự cố hiện trường.</string>
 	<key>NSMicrophoneUsageDescription</key>
 	<string>Ứng dụng cần truy cập Microphone để ghi âm mô tả sự cố hiện trường.</string>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>Ứng dụng cần định vị GPS để tự động gắn tọa độ hiện trường vào phiếu kiểm tra.</string>
+	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+	<string>Ứng dụng cần định vị GPS để tự động gắn tọa độ hiện trường vào phiếu kiểm tra.</string>
 </dict>
 </plist>

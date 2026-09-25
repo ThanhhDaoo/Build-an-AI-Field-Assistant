@@ -42,6 +42,10 @@ Tại các môi trường công nghiệp nặng, công trường xây dựng, ph
 - **Timer HUD Kỹ thuật số**: Đồng hồ đếm giây ghi âm chính xác kèm chấm đỏ nhấp nháy `● REC`.
 - **Nút trượt công nghiệp (Swipe-To-Submit)**: Cơ chế trượt xác nhận "Vuốt để duyệt & gửi biên bản >>" loại bỏ 100% rủi ro vô tình bấm nhầm khi kỹ sư đang mang găng tay bảo hộ.
 
+### 📍 2.5. Điểm Thưởng: Định Vị GPS Hiện Trường & Thông Báo Phản Hồi Đồng Bộ
+- **Định vị GPS 1-chạm (`geolocator: ^13.0.1`)**: Chip `[📍 GPS 1-chạm]` tại màn hình duyệt phiếu và màn hình thu âm cho phép kỹ sư lấy tọa độ phần cứng tức thì, chuẩn hóa dạng `10.7769° N, 106.7009° E (Vị trí GPS)` điền thẳng vào biên bản mà không cần nhập tay.
+- **Thông báo phản hồi đồng bộ ngầm (`InAppSyncBanner` & `SyncNotificationService`)**: Khi hệ thống phục hồi mạng và hoàn tất đồng bộ tự động các biên bản chờ, ứng dụng phát thông báo nổi: `"✓ Đã tự động đồng bộ thành công X phiếu kiểm tra lên máy chủ!"` với hiệu ứng trượt mượt mà và tự động ẩn.
+
 ---
 
 ## 3. 🏗️ Kiến Trúc Hệ Thống (Architecture)
@@ -220,7 +224,7 @@ flutter pub get
 
 ## 6. 🧪 Kiểm Thử & Đảm Bảo Chất Lượng Mã Nguồn (QA & Testing)
 
-Dự án áp dụng quy trình kiểm thử tự động toàn diện với **30 bài test đơn vị (Unit Tests)** bao phủ toàn bộ các tầng nghiệp vụ:
+Dự án áp dụng quy trình kiểm thử tự động toàn diện với **35 bài test đơn vị (Unit Tests)** bao phủ toàn bộ các tầng nghiệp vụ:
 
 ### Chạy Phân Tích Tĩnh Cú Pháp (Linter Analysis):
 ```bash
@@ -233,7 +237,7 @@ flutter analyze
 ### Chạy Toàn Bộ Bộ Kiểm Thử Tự Động:
 ```bash
 flutter test
-# 00:01 +30: All tests passed! (30/30 PASS 100%)
+# 00:01 +35: All tests passed! (35/35 PASS 100%)
 ```
 
 ### Danh Mục Các Bộ Kiểm Thử:
@@ -244,6 +248,7 @@ flutter test
 5. `test/phase_4_interaction_test.dart`: Kiểm thử tương tác `InspectionPart`, bóc tách `equipmentId`, thẻ lỗi, danh mục vật tư (+/-), nút thu âm 88px và HUD timer.
 6. `test/phase_5_offline_sync_test.dart`: Kiểm thử lưu trữ SQLite `synced` vs `pending`, fallback khi server lỗi, và cơ chế tự động đồng bộ ngầm khi `ConnectivityService` phát hiện mạng phục hồi.
 7. `test/phase_7_multimodal_image_test.dart`: Kiểm thử Camera Image Picker, bảo toàn `imagePath`, serialization SQLite v3 và Gemini Multimodal Vision.
+8. `test/phase_8_gps_and_sync_notification_test.dart`: Kiểm thử 1-chạm lấy tọa độ GPS hiện trường (LocationService), chuẩn hóa kinh vĩ độ, SyncNotificationService phát thông báo và In-app Banner phản hồi đồng bộ ngầm tự động.
 
 ---
 

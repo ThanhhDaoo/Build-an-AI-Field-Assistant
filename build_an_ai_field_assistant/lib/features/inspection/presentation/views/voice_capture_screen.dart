@@ -6,6 +6,7 @@ import '../../../../core/constants/app_colors.dart';
 import '../../../../core/errors/exceptions.dart';
 import '../../../../core/utils/dialog_helper.dart';
 import '../controllers/inspection_controller.dart';
+import '../widgets/in_app_sync_banner.dart';
 import '../widgets/permission_dialog.dart';
 import '../widgets/wave_record_button.dart';
 import 'ticket_review_screen.dart';
@@ -276,6 +277,148 @@ class _VoiceCaptureScreenState extends State<VoiceCaptureScreen> {
     );
   }
 
+  Widget _buildGpsTagSection(InspectionController ctrl) {
+    final gpsLoc = ctrl.taggedGpsLocation;
+
+    if (gpsLoc != null && gpsLoc.isNotEmpty) {
+      return Container(
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        decoration: BoxDecoration(
+          color: AppColors.surface,
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(color: AppColors.primary.withValues(alpha: 0.5), width: 1.2),
+        ),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(4),
+              decoration: BoxDecoration(
+                color: AppColors.primary.withValues(alpha: 0.15),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(Icons.my_location_rounded, size: 14, color: AppColors.primary),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'TỌA ĐỘ GPS ĐÃ GẮN VÀO PHIẾU',
+                    style: TextStyle(
+                      color: AppColors.primary,
+                      fontSize: 9.5,
+                      fontWeight: FontWeight.bold,
+                      letterSpacing: 0.5,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    gpsLoc,
+                    style: const TextStyle(
+                      color: AppColors.textPrimary,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
+              ),
+            ),
+            IconButton(
+              icon: const Icon(Icons.refresh_rounded, size: 18, color: AppColors.textSecondary),
+              tooltip: 'Lấy lại tọa độ',
+              onPressed: () async {
+                final loc = await ctrl.fetchGpsLocation();
+                if (loc != null && mounted) {
+                  DialogHelper.showSnackBar(context, '📍 Đã cập nhật GPS: $loc');
+                }
+              },
+            ),
+            IconButton(
+              icon: const Icon(Icons.close_rounded, size: 18, color: AppColors.textMuted),
+              tooltip: 'Hủy gắn GPS',
+              onPressed: () => ctrl.clearTaggedGpsLocation(),
+            ),
+          ],
+        ),
+      );
+    }
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: AppColors.cardBorder),
+      ),
+      child: Row(
+        children: [
+          const Icon(Icons.location_on_outlined, size: 18, color: AppColors.textMuted),
+          const SizedBox(width: 8),
+          const Expanded(
+            child: Text(
+              'Gắn tọa độ vị trí hiện trường',
+              style: TextStyle(color: AppColors.textSecondary, fontSize: 12),
+            ),
+          ),
+          InkWell(
+            onTap: ctrl.isFetchingLocation
+                ? null
+                : () async {
+                    final loc = await ctrl.fetchGpsLocation();
+                    if (loc != null && mounted) {
+                      DialogHelper.showSnackBar(context, '📍 Đã lấy tọa độ GPS: $loc');
+                    } else if (mounted) {
+                      DialogHelper.showSnackBar(
+                        context,
+                        '⚠️ Không thể lấy GPS. Vui lòng bật định vị và cấp quyền.',
+                      );
+                    }
+                  },
+            borderRadius: BorderRadius.circular(14),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+              decoration: BoxDecoration(
+                color: AppColors.primary.withValues(alpha: 0.12),
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(color: AppColors.primary.withValues(alpha: 0.4)),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (ctrl.isFetchingLocation)
+                    const SizedBox(
+                      width: 11,
+                      height: 11,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: AppColors.primary,
+                      ),
+                    )
+                  else
+                    const Icon(Icons.my_location_rounded, size: 13, color: AppColors.primary),
+                  const SizedBox(width: 5),
+                  Text(
+                    ctrl.isFetchingLocation ? 'Đang định vị...' : '📍 GPS 1-chạm',
+                    style: const TextStyle(
+                      color: AppColors.primary,
+                      fontSize: 11,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildSpeechChip(InspectionController ctrl, String text) {
     return InkWell(
       onTap: () {
@@ -470,6 +613,7 @@ class _VoiceCaptureScreenState extends State<VoiceCaptureScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
+                  InAppSyncBanner(controller: ctrl),
                   // Header Title
                   Container(
                     width: double.infinity,
@@ -521,6 +665,11 @@ class _VoiceCaptureScreenState extends State<VoiceCaptureScreen> {
 
                   // Photo Capture & Preview Section
                   _buildPhotoCaptureSection(ctrl),
+
+                  const SizedBox(height: 10),
+
+                  // GPS 1-touch Acquisition Section
+                  _buildGpsTagSection(ctrl),
 
                   const SizedBox(height: 24),
 

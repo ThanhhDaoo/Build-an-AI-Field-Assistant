@@ -22,6 +22,7 @@
 | **Giai đoạn 5** | **Xử lý Offline-First & Đồng bộ Dữ liệu (SQLite 'synced' / 'pending', Auto-sync ConnectivityService)** | **ĐÃ HOÀN THÀNH** | `88a55fc`, `68f56ec` |
 | **Giai đoạn 6** | **Đóng gói Sản phẩm & Tài liệu Bàn giao (Build Web Release, APK Release, README & AI_WORKLOG)** | **ĐÃ HOÀN THÀNH** | `fef17c3` |
 | **Giai đoạn 7** | **Bổ sung Chụp Ảnh Hiện Trường & Gemini 1.5 Flash Vision Multimodal (Image + Audio/Text)** | **ĐÃ HOÀN THÀNH** | `23021ae` |
+| **Giai đoạn 8** | **Bổ sung Điểm Thưởng: Định Vị GPS 1-Chạm & Thông Báo Phản Hồi Đồng Bộ Ngầm** | **ĐÃ HOÀN THÀNH** | `2aa5ef4` |
 
 ---
 
@@ -232,6 +233,27 @@
 
 ---
 
+### [x] Giai Đoạn 8: Điểm Thưởng — Định Vị GPS 1-Chạm & Thông Báo Phản Hồi Đồng Bộ Ngầm
+- **8.1. Tích hợp Định Vị GPS Phần Cứng & Khai báo Quyền Hạn**:
+  - Tích hợp thư viện `geolocator: ^13.0.1` vào `pubspec.yaml`.
+  - Khai báo quyền `android.permission.ACCESS_FINE_LOCATION`, `ACCESS_COARSE_LOCATION` trong `AndroidManifest.xml` và `NSLocationWhenInUseUsageDescription` trong `Info.plist`.
+- **8.2. Xây Dựng LocationService (`lib/core/services/location_service.dart`)**:
+  - Kiểm tra trạng thái GPS phần cứng, kiểm tra và yêu cầu cấp quyền từ hệ thống.
+  - Chuẩn hóa định dạng tọa độ chuẩn: `${latitude}° N/S, ${longitude}° E/W (Vị trí GPS)` (VD: `10.7769° N, 106.7009° E (Vị trí GPS)`).
+  - Tích hợp `mockPositionProvider` phục vụ kiểm thử tự động độc lập không phụ thuộc phần cứng thiết bị.
+- **8.3. Xây Dựng Hệ Thống Phản Hồi Đồng Bộ Ngầm (Sync Notification Feedback)**:
+  - Tạo `SyncNotificationService` (`lib/core/services/sync_notification_service.dart`) phát sự kiện khi `syncPendingTickets()` hoàn tất.
+  - Tạo widget `InAppSyncBanner` (`lib/features/inspection/presentation/widgets/in_app_sync_banner.dart`): Thiết kế màu xanh ngọc công nghiệp (`#064E3B`, viền `#10B981`), hiển thị thông điệp `"✓ Đã tự động đồng bộ thành công X phiếu kiểm tra lên máy chủ!"`, hiệu ứng trượt mượt mà và tự động ẩn sau 4 giây.
+  - Tích hợp `InAppSyncBanner` nổi trên đỉnh `MainShellScreen`, `TicketReviewScreen` và `VoiceCaptureScreen`.
+- **8.4. Trải Nghiệm Người Dùng Hiện Trường (Mobile UX)**:
+  - `TicketReviewScreen`: Bổ sung chip `[📍 GPS 1-chạm]` cạnh ô vị trí và nút icon GPS bên trong TextField cho phép kỹ sư 1-chạm lấy ngay tọa độ thời gian thực.
+  - `VoiceCaptureScreen`: Bổ sung cụm định vị GPS cho phép kỹ sư gắn vị trí trước/trong khi ghi âm để AI tự động tích hợp tọa độ vào biên bản.
+- **8.5. Kiểm Thử Tự Động Toàn Diện**:
+  - Xây dựng bộ test `test/phase_8_gps_and_sync_notification_test.dart` (5 bài test kiểm thử định dạng tọa độ, lấy vị trí, phát thông báo và tương tác controller).
+  - Toàn bộ **35/35 bài test PASS 100%**, `flutter analyze` 0 cảnh báo.
+
+---
+
 ## 4. 🧰 Danh Mục Công Cụ AI Đã Sử Dụng (AI Tooling & Stack)
 
 1. **Google Gemini 1.5 Flash (Multimodal Audio & Text Engine)**:
@@ -435,9 +457,9 @@ flutter analyze
 ### 8.2. Kiểm Thử Đơn Vị Tự Động (Automated Unit Tests)
 ```bash
 flutter test
-# 00:01 +30: All tests passed!
+# 00:01 +35: All tests passed!
 ```
-- **Tổng số bài test**: 30/30 bài kiểm thử thành công (100% PASS).
+- **Tổng số bài test**: 35/35 bài kiểm thử thành công (100% PASS).
 
 ### 8.3. Kết Quả Đóng Gói Bản Web Release:
 ```bash
@@ -471,6 +493,7 @@ flutter build apk --release
 | `68f56ec` | **Worklog Sync** | `docs: cap nhat ma commit 88a55fc cho giai doan 5 trong AI_WORKLOG.md` |
 | `fef17c3` | **Giai đoạn 6** | `feat(phase-6): dong goi san pham build web release, apk release va hoan thien tai lieu README AI_WORKLOG` |
 | `23021ae` | **Giai đoạn 7** | `feat(camera): tich hop chup anh hien truong, Gemini 1.5 Flash Vision Multimodal va nang cap SQLite v3` |
+| `2aa5ef4` | **Giai đoạn 8** | `feat(gps-sync): tich hop 1-cham GPS geolocator, InAppSyncBanner va SyncNotificationService` |
 
 ---
 

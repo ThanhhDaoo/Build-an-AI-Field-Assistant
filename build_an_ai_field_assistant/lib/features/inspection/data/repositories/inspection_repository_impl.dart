@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../../../core/constants/app_constants.dart';
 import '../../../../core/services/connectivity_service.dart';
+import '../../../../core/services/sync_notification_service.dart';
 import '../../domain/entities/inspection_ticket.dart';
 import '../../domain/repositories/i_inspection_repository.dart';
 import '../datasources/inspection_local_ds.dart';
@@ -14,6 +15,7 @@ class InspectionRepositoryImpl implements IInspectionRepository {
   final IInspectionRemoteDataSource remoteDataSource;
   final IInspectionLocalDataSource localDataSource;
   final ConnectivityService connectivityService;
+  final SyncNotificationService? syncNotificationService;
 
   final _ticketsStreamController = StreamController<List<InspectionTicket>>.broadcast();
   StreamSubscription<bool>? _connectivitySubscription;
@@ -22,6 +24,7 @@ class InspectionRepositoryImpl implements IInspectionRepository {
     required this.remoteDataSource,
     required this.localDataSource,
     required this.connectivityService,
+    this.syncNotificationService,
   }) {
     // Automatically trigger sync when network is restored
     _connectivitySubscription = connectivityService.onConnectivityChanged.listen((isOnline) {
@@ -175,6 +178,7 @@ class InspectionRepositoryImpl implements IInspectionRepository {
 
     if (syncedCount > 0) {
       await getTickets(); // Refresh stream
+      syncNotificationService?.notifySyncSuccess(syncedCount);
     }
     return syncedCount;
   }

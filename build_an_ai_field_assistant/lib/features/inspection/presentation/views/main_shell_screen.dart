@@ -6,6 +6,7 @@ import '../../../../core/utils/date_formatter.dart';
 import '../../../../core/utils/dialog_helper.dart';
 import '../../domain/entities/inspection_ticket.dart';
 import '../controllers/inspection_controller.dart';
+import '../widgets/in_app_sync_banner.dart';
 import '../widgets/priority_badge_chip.dart';
 import 'ticket_history_screen.dart';
 import 'ticket_review_screen.dart';
@@ -164,21 +165,33 @@ class _MainShellScreenState extends State<MainShellScreen> {
 
         return Scaffold(
           backgroundColor: AppColors.background,
-          body: IndexedStack(
-            index: _currentIndex,
+          body: Stack(
             children: [
-              _DashboardTabView(
-                controller: ctrl,
-                onNavigateToRecord: () => setState(() => _currentIndex = 1),
-                onOpenSettings: _showSettingsModal,
+              IndexedStack(
+                index: _currentIndex,
+                children: [
+                  _DashboardTabView(
+                    controller: ctrl,
+                    onNavigateToRecord: () => setState(() => _currentIndex = 1),
+                    onOpenSettings: _showSettingsModal,
+                  ),
+                  VoiceCaptureScreen(
+                    controller: ctrl,
+                    embeddedMode: true,
+                  ),
+                  TicketHistoryScreen(
+                    controller: ctrl,
+                    embeddedMode: true,
+                  ),
+                ],
               ),
-              VoiceCaptureScreen(
-                controller: ctrl,
-                embeddedMode: true,
-              ),
-              TicketHistoryScreen(
-                controller: ctrl,
-                embeddedMode: true,
+              Positioned(
+                top: 0,
+                left: 0,
+                right: 0,
+                child: SafeArea(
+                  child: InAppSyncBanner(controller: ctrl),
+                ),
               ),
             ],
           ),

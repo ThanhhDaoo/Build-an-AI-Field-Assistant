@@ -3,7 +3,9 @@ import 'package:flutter/foundation.dart';
 import '../../../../core/errors/exceptions.dart';
 import '../../../../core/services/audio_recorder_service.dart';
 import '../../../../core/services/connectivity_service.dart';
+import '../../../../core/services/location_service.dart';
 import '../../../../core/services/speech_to_text_service.dart';
+import '../../../../core/services/sync_notification_service.dart';
 import '../../domain/entities/inspection_ticket.dart';
 import '../../domain/repositories/i_inspection_repository.dart';
 
@@ -21,12 +23,15 @@ class InspectionController extends ChangeNotifier {
   final AudioRecorderService audioRecorderService;
   final ConnectivityService connectivityService;
   final SpeechToTextService? speechToTextService;
+  final LocationService? locationService;
+  final SyncNotificationService? syncNotificationService;
 
   // Subscriptions
   StreamSubscription<double>? _amplitudeSubscription;
   StreamSubscription<Duration>? _durationSubscription;
   StreamSubscription<bool>? _connectivitySubscription;
   StreamSubscription<List<InspectionTicket>>? _ticketsSubscription;
+  StreamSubscription<SyncNotificationEvent>? _syncNotificationSubscription;
 
   // View States
   InspectionViewState _state = InspectionViewState.idle;
@@ -96,11 +101,56 @@ class InspectionController extends ChangeNotifier {
     notifyListeners();
   }
 
+  // Tagged GPS Location
+  String? _taggedGpsLocation;
+  String? get taggedGpsLocation => _taggedGpsLocation;
+
+  bool _isFetchingLocation = false;
+  bool get isFetchingLocation => _isFetchingLocation;
+
+  /// 1-Touch GPS Coordinate Acquisition
+  Future<String?> fetchGpsLocation() async {
+    if (locationService == null) return null;
+    _isFetchingLocation = true;
+    notifyListeners();
+    try {
+      final loc = await locationService!.getCurrentFormattedLocation();
+      if (loc != null) {
+        _taggedGpsLocation = loc;
+      }
+      return loc;
+    } finally {
+      _isFetchingLocation = false;
+      notifyListeners();
+    }
+  }
+
+  void setTaggedGpsLocation(String? loc) {
+    _taggedGpsLocation = loc;
+    notifyListeners();
+  }
+
+  void clearTaggedGpsLocation() {
+    _taggedGpsLocation = null;
+    notifyListeners();
+  }
+
+  // Active Sync Notification Banner Message
+  String? _activeSyncMessage;
+  String? get activeSyncMessage => _activeSyncMessage;
+
+  void dismissSyncMessage() {
+    _activeSyncMessage = null;
+    notifyListeners();
+  }
+
   InspectionController({
     required this.repository,
     required this.audioRecorderService,
     required this.connectivityService,
     this.speechToTextService,
+    this.locationService,
+    this.syncNotificationService,
   }) {
     _init();
   }
@@ -127,6 +177,13 @@ class InspectionController extends ChangeNotifier {
       _tickets = ticketList;
       notifyListeners();
     });
+
+    if (syncNotificationService != null) {
+      _syncNotificationSubscription = syncNotificationService!.onSyncNotification.listen((event) {
+        _activeSyncMessage = event.message;
+        notifyListeners();
+      });
+    }
 
     loadTickets();
   }
@@ -203,9 +260,21 @@ class InspectionController extends ChangeNotifier {
         imagePath: _selectedImagePath,
       );
 
-      _currentDraftTicket = (extractedTicket.imagePath == null && _selectedImagePath != null)
+      InspectionTicket ticketWithImage = (extractedTicket.imagePath == null && _selectedImagePath != null)
           ? extractedTicket.copyWith(imagePath: _selectedImagePath)
           : extractedTicket;
+
+      if (_taggedGpsLocation != null && _taggedGpsLocation!.isNotEmpty) {
+        if (ticketWithImage.location.isEmpty ||
+            ticketWithImage.location.toLowerCase().contains('chưa rõ') ||
+            ticketWithImage.location.toLowerCase().contains('hiện trường')) {
+          ticketWithImage = ticketWithImage.copyWith(location: _taggedGpsLocation);
+        } else if (!ticketWithImage.location.contains('GPS')) {
+          ticketWithImage = ticketWithImage.copyWith(location: '${ticketWithImage.location} - $_taggedGpsLocation');
+        }
+      }
+
+      _currentDraftTicket = ticketWithImage;
       _state = InspectionViewState.success;
       notifyListeners();
       return _currentDraftTicket;
@@ -243,9 +312,21 @@ class InspectionController extends ChangeNotifier {
         promptText,
         imagePath: imgPath,
       );
-      _currentDraftTicket = (ticket.imagePath == null && imgPath != null)
+      InspectionTicket ticketWithImage = (ticket.imagePath == null && imgPath != null)
           ? ticket.copyWith(imagePath: imgPath)
           : ticket;
+
+      if (_taggedGpsLocation != null && _taggedGpsLocation!.isNotEmpty) {
+        if (ticketWithImage.location.isEmpty ||
+            ticketWithImage.location.toLowerCase().contains('chưa rõ') ||
+            ticketWithImage.location.toLowerCase().contains('hiện trường')) {
+          ticketWithImage = ticketWithImage.copyWith(location: _taggedGpsLocation);
+        } else if (!ticketWithImage.location.contains('GPS')) {
+          ticketWithImage = ticketWithImage.copyWith(location: '${ticketWithImage.location} - $_taggedGpsLocation');
+        }
+      }
+
+      _currentDraftTicket = ticketWithImage;
       _state = InspectionViewState.success;
       notifyListeners();
       return _currentDraftTicket;
@@ -271,6 +352,7 @@ class InspectionController extends ChangeNotifier {
       await repository.saveTicket(_currentDraftTicket!);
       _currentDraftTicket = null;
       _selectedImagePath = null;
+      _taggedGpsLocation = null;
       _state = InspectionViewState.idle;
       await loadTickets();
       return true;
@@ -290,6 +372,9 @@ class InspectionController extends ChangeNotifier {
     try {
       final count = await repository.syncPendingTickets();
       await loadTickets();
+      if (count > 0) {
+        syncNotificationService?.notifySyncSuccess(count);
+      }
       return count;
     } finally {
       _isSyncing = false;
@@ -309,6 +394,7 @@ class InspectionController extends ChangeNotifier {
     _durationSubscription?.cancel();
     _connectivitySubscription?.cancel();
     _ticketsSubscription?.cancel();
+    _syncNotificationSubscription?.cancel();
     super.dispose();
   }
 }

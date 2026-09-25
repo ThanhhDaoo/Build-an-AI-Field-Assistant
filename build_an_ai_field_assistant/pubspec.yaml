@@ -52,6 +52,7 @@ dependencies:
   permission_handler: ^11.4.0
   speech_to_text: ^7.0.0
   image_picker: ^1.1.2
+  geolocator: ^13.0.1
 
 dev_dependencies:
   flutter_test:

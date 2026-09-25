@@ -8,7 +8,9 @@ import '../network/api_client.dart';
 import '../services/audio_player_service.dart';
 import '../services/audio_recorder_service.dart';
 import '../services/connectivity_service.dart';
+import '../services/location_service.dart';
 import '../services/speech_to_text_service.dart';
+import '../services/sync_notification_service.dart';
 
 /// Service Locator instance (GetIt)
 final sl = GetIt.instance;
@@ -20,6 +22,8 @@ Future<void> initInjection() async {
   sl.registerLazySingleton<AudioPlayerService>(() => AudioPlayerService());
   sl.registerLazySingleton<ConnectivityService>(() => ConnectivityService());
   sl.registerLazySingleton<SpeechToTextService>(() => SpeechToTextService());
+  sl.registerLazySingleton<LocationService>(() => LocationService());
+  sl.registerLazySingleton<SyncNotificationService>(() => SyncNotificationService());
 
   // 2. Networking
   sl.registerLazySingleton<ApiClient>(() => ApiClient());
@@ -38,6 +42,7 @@ Future<void> initInjection() async {
       remoteDataSource: sl(),
       localDataSource: sl(),
       connectivityService: sl(),
+      syncNotificationService: sl(),
     ),
   );
 
@@ -48,6 +53,8 @@ Future<void> initInjection() async {
       audioRecorderService: sl(),
       connectivityService: sl(),
       speechToTextService: sl(),
+      locationService: sl(),
+      syncNotificationService: sl(),
     ),
   );
 }
