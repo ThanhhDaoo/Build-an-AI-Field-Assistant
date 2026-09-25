@@ -11,7 +11,7 @@ import '../widgets/permission_dialog.dart';
 import '../widgets/wave_record_button.dart';
 import 'ticket_review_screen.dart';
 
-/// Professional Field Audio Logger & Incident Intake Station
+/// Clean Enterprise Field Audio & Incident Intake Screen
 class VoiceCaptureScreen extends StatefulWidget {
   final InspectionController controller;
   final bool embeddedMode;
@@ -33,25 +33,34 @@ class _VoiceCaptureScreenState extends State<VoiceCaptureScreen> {
     {
       'title': 'Rò rỉ van dầu áp suất cao',
       'location': 'Phân xưởng cán thép 2',
-      'text': 'Phát hiện van dầu áp lực cao tại Phân xưởng cán thép 2 bị nứt gioăng, dầu rỉ tràn sàn có nguy cơ trơn trượt té ngã. Cần thay van DN50 gấp.',
+      'text':
+          'Phát hiện van dầu áp lực cao tại Phân xưởng cán thép 2 bị nứt gioăng, dầu rỉ tràn sàn có nguy cơ trơn trượt té ngã. Cần thay van DN50 gấp.',
       'icon': Icons.water_drop_outlined,
       'color': AppColors.priorityHigh,
     },
     {
       'title': 'Quá nhiệt tủ điện phân phối',
       'location': 'Tủ điện số 4 - Kho vật tư',
-      'text': 'Tủ điện số 4 cạnh kho vật tư có mùi khét nồng, aptomat quá nhiệt phát tia lửa điện lẹt xẹt, cần ngắt cầu dao tổng khu vực và đội cơ điện xử lý ngay.',
+      'text':
+          'Tủ điện số 4 cạnh kho vật tư có mùi khét nồng, aptomat quá nhiệt phát tia lửa điện lẹt xẹt, cần ngắt cầu dao tổng khu vực và đội cơ điện xử lý ngay.',
       'icon': Icons.bolt_outlined,
       'color': AppColors.priorityCritical,
     },
     {
       'title': 'Nứt kết cấu dầm chịu lực',
       'location': 'Tầng 3 Block B',
-      'text': 'Phát hiện vết nứt dầm bê tông cốt thép tại trục D tầng 3 Block B, chiều dài khoảng 1.5 mét, cần kỹ sư kết cấu kiểm tra độ an toàn chịu tải.',
+      'text':
+          'Phát hiện vết nứt dầm bê tông cốt thép tại trục D tầng 3 Block B, chiều dài khoảng 1.5 mét, cần kỹ sư kết cấu kiểm tra độ an toàn chịu tải.',
       'icon': Icons.foundation_outlined,
       'color': AppColors.priorityMedium,
     },
   ];
+
+  @override
+  void dispose() {
+    _quickNoteController.dispose();
+    super.dispose();
+  }
 
   Future<void> _pickImage(ImageSource source) async {
     try {
@@ -66,7 +75,7 @@ class _VoiceCaptureScreenState extends State<VoiceCaptureScreen> {
         widget.controller.setSelectedImagePath(pickedFile.path);
       }
     } catch (e) {
-      debugPrint('Lỗi chụp/chọn ảnh: $e');
+      debugPrint('Lỗi tải ảnh: $e');
       if (mounted) {
         DialogHelper.showSnackBar(
           context,
@@ -83,7 +92,7 @@ class _VoiceCaptureScreenState extends State<VoiceCaptureScreen> {
         path,
         fit: fit,
         errorBuilder: (_, _, _) => const Center(
-          child: Icon(Icons.broken_image_rounded, color: AppColors.textMuted, size: 24),
+          child: Icon(Icons.broken_image_rounded, color: AppColors.textMuted, size: 20),
         ),
       );
     }
@@ -91,7 +100,7 @@ class _VoiceCaptureScreenState extends State<VoiceCaptureScreen> {
       File(path),
       fit: fit,
       errorBuilder: (_, _, _) => const Center(
-        child: Icon(Icons.broken_image_rounded, color: AppColors.textMuted, size: 24),
+        child: Icon(Icons.broken_image_rounded, color: AppColors.textMuted, size: 20),
       ),
     );
   }
@@ -126,102 +135,16 @@ class _VoiceCaptureScreenState extends State<VoiceCaptureScreen> {
     );
   }
 
-  Widget _buildPhotoCaptureSection(InspectionController ctrl) {
+  /// Compact attachment toolbar: Camera & GPS on a single sleek bar
+  Widget _buildAttachmentToolbar(InspectionController ctrl) {
     final imagePath = ctrl.selectedImagePath;
-
-    if (imagePath != null && imagePath.isNotEmpty) {
-      return Container(
-        width: double.infinity,
-        padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(
-          color: AppColors.surface,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: AppColors.primary.withValues(alpha: 0.6), width: 1.5),
-        ),
-        child: Row(
-          children: [
-            // Image Thumbnail
-            GestureDetector(
-              onTap: () => _showFullScreenImage(context, imagePath),
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(8),
-                child: SizedBox(
-                  width: 56,
-                  height: 56,
-                  child: Stack(
-                    fit: StackFit.expand,
-                    children: [
-                      _buildImageWidget(imagePath),
-                      Container(
-                        color: Colors.black.withValues(alpha: 0.25),
-                        child: const Icon(Icons.zoom_in_rounded, color: Colors.white70, size: 20),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                        decoration: BoxDecoration(
-                          color: AppColors.primary.withValues(alpha: 0.15),
-                          borderRadius: BorderRadius.circular(4),
-                        ),
-                        child: const Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(Icons.camera_alt_rounded, size: 11, color: AppColors.primary),
-                            SizedBox(width: 4),
-                            Text(
-                              'ĐÃ ĐÍNH KÈM ẢNH HIỆN TRƯỜNG',
-                              style: TextStyle(
-                                color: AppColors.primary,
-                                fontSize: 9.5,
-                                fontWeight: FontWeight.bold,
-                                letterSpacing: 0.5,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 4),
-                  const Text(
-                    'AI sẽ phân tích đồng thời ảnh chụp & giọng nói để lập biên bản',
-                    style: TextStyle(
-                      color: AppColors.textMuted,
-                      fontSize: 11,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            IconButton(
-              icon: const Icon(Icons.camera_alt_outlined, color: AppColors.textSecondary, size: 20),
-              tooltip: 'Chụp lại',
-              onPressed: () => _pickImage(ImageSource.camera),
-            ),
-            IconButton(
-              icon: const Icon(Icons.close_rounded, color: AppColors.priorityHigh, size: 20),
-              tooltip: 'Xóa ảnh',
-              onPressed: () => ctrl.clearSelectedImage(),
-            ),
-          ],
-        ),
-      );
-    }
+    final gpsLoc = ctrl.taggedGpsLocation;
+    final hasImage = imagePath != null && imagePath.isNotEmpty;
+    final hasGps = gpsLoc != null && gpsLoc.isNotEmpty;
 
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration: BoxDecoration(
         color: AppColors.surface,
         borderRadius: BorderRadius.circular(12),
@@ -229,224 +152,156 @@ class _VoiceCaptureScreenState extends State<VoiceCaptureScreen> {
       ),
       child: Row(
         children: [
-          const Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Ảnh hiện trường (Tùy chọn)',
-                  style: TextStyle(
-                    color: AppColors.textPrimary,
-                    fontSize: 12.5,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                SizedBox(height: 2),
-                Text(
-                  'Chụp ảnh thiết bị trước khi nói để AI nhận diện tổn hại',
-                  style: TextStyle(color: AppColors.textMuted, fontSize: 10.5),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(width: 8),
-          OutlinedButton.icon(
-            onPressed: () => _pickImage(ImageSource.camera),
-            style: OutlinedButton.styleFrom(
-              foregroundColor: AppColors.primary,
-              side: const BorderSide(color: AppColors.primary),
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-            ),
-            icon: const Icon(Icons.camera_alt_rounded, size: 15),
-            label: const Text('Chụp ảnh', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
-          ),
-          const SizedBox(width: 6),
-          IconButton(
-            onPressed: () => _pickImage(ImageSource.gallery),
-            tooltip: 'Chọn ảnh từ thư viện',
-            style: IconButton.styleFrom(
-              backgroundColor: AppColors.background,
-              side: const BorderSide(color: AppColors.cardBorder),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-            ),
-            icon: const Icon(Icons.photo_library_outlined, size: 16, color: AppColors.textSecondary),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildGpsTagSection(InspectionController ctrl) {
-    final gpsLoc = ctrl.taggedGpsLocation;
-
-    if (gpsLoc != null && gpsLoc.isNotEmpty) {
-      return Container(
-        width: double.infinity,
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-        decoration: BoxDecoration(
-          color: AppColors.surface,
-          borderRadius: BorderRadius.circular(10),
-          border: Border.all(color: AppColors.primary.withValues(alpha: 0.5), width: 1.2),
-        ),
-        child: Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(4),
-              decoration: BoxDecoration(
-                color: AppColors.primary.withValues(alpha: 0.15),
-                shape: BoxShape.circle,
-              ),
-              child: const Icon(Icons.my_location_rounded, size: 14, color: AppColors.primary),
-            ),
-            const SizedBox(width: 8),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    'TỌA ĐỘ GPS ĐÃ GẮN VÀO PHIẾU',
-                    style: TextStyle(
-                      color: AppColors.primary,
-                      fontSize: 9.5,
-                      fontWeight: FontWeight.bold,
-                      letterSpacing: 0.5,
-                    ),
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    gpsLoc,
-                    style: const TextStyle(
-                      color: AppColors.textPrimary,
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ],
-              ),
-            ),
-            IconButton(
-              icon: const Icon(Icons.refresh_rounded, size: 18, color: AppColors.textSecondary),
-              tooltip: 'Lấy lại tọa độ',
-              onPressed: () async {
-                final loc = await ctrl.fetchGpsLocation();
-                if (loc != null && mounted) {
-                  DialogHelper.showSnackBar(context, '📍 Đã cập nhật GPS: $loc');
-                }
-              },
-            ),
-            IconButton(
-              icon: const Icon(Icons.close_rounded, size: 18, color: AppColors.textMuted),
-              tooltip: 'Hủy gắn GPS',
-              onPressed: () => ctrl.clearTaggedGpsLocation(),
-            ),
-          ],
-        ),
-      );
-    }
-
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: AppColors.cardBorder),
-      ),
-      child: Row(
-        children: [
-          const Icon(Icons.location_on_outlined, size: 18, color: AppColors.textMuted),
-          const SizedBox(width: 8),
-          const Expanded(
-            child: Text(
-              'Gắn tọa độ vị trí hiện trường',
-              style: TextStyle(color: AppColors.textSecondary, fontSize: 12),
-            ),
-          ),
-          InkWell(
-            onTap: ctrl.isFetchingLocation
-                ? null
-                : () async {
-                    final loc = await ctrl.fetchGpsLocation();
-                    if (loc != null && mounted) {
-                      DialogHelper.showSnackBar(context, '📍 Đã lấy tọa độ GPS: $loc');
-                    } else if (mounted) {
-                      DialogHelper.showSnackBar(
-                        context,
-                        '⚠️ Không thể lấy GPS. Vui lòng bật định vị và cấp quyền.',
-                      );
-                    }
-                  },
-            borderRadius: BorderRadius.circular(14),
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-              decoration: BoxDecoration(
-                color: AppColors.primary.withValues(alpha: 0.12),
-                borderRadius: BorderRadius.circular(14),
-                border: Border.all(color: AppColors.primary.withValues(alpha: 0.4)),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  if (ctrl.isFetchingLocation)
-                    const SizedBox(
-                      width: 11,
-                      height: 11,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        color: AppColors.primary,
+          // Photo Attachment Segment
+          Expanded(
+            child: hasImage
+                ? Row(
+                    children: [
+                      GestureDetector(
+                        onTap: () => _showFullScreenImage(context, imagePath),
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(6),
+                          child: SizedBox(
+                            width: 36,
+                            height: 36,
+                            child: _buildImageWidget(imagePath),
+                          ),
+                        ),
                       ),
-                    )
-                  else
-                    const Icon(Icons.my_location_rounded, size: 13, color: AppColors.primary),
-                  const SizedBox(width: 5),
-                  Text(
-                    ctrl.isFetchingLocation ? 'Đang định vị...' : '📍 GPS 1-chạm',
-                    style: const TextStyle(
-                      color: AppColors.primary,
-                      fontSize: 11,
-                      fontWeight: FontWeight.bold,
+                      const SizedBox(width: 8),
+                      const Expanded(
+                        child: Text(
+                          'Đã có ảnh sự cố',
+                          style: TextStyle(
+                            color: AppColors.primary,
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                      IconButton(
+                        visualDensity: VisualDensity.compact,
+                        icon: const Icon(Icons.close_rounded, size: 16, color: AppColors.textMuted),
+                        tooltip: 'Xóa ảnh',
+                        onPressed: () => ctrl.clearSelectedImage(),
+                      ),
+                    ],
+                  )
+                : InkWell(
+                    onTap: () => _pickImage(ImageSource.camera),
+                    borderRadius: BorderRadius.circular(8),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 4),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            Icons.camera_alt_outlined,
+                            size: 18,
+                            color: AppColors.textSecondary,
+                          ),
+                          const SizedBox(width: 6),
+                          const Text(
+                            'Chụp ảnh',
+                            style: TextStyle(
+                              color: AppColors.textPrimary,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
-                ],
-              ),
-            ),
+          ),
+
+          // Divider
+          Container(
+            width: 1,
+            height: 24,
+            margin: const EdgeInsets.symmetric(horizontal: 8),
+            color: AppColors.cardBorder,
+          ),
+
+          // GPS Location Segment
+          Expanded(
+            child: hasGps
+                ? Row(
+                    children: [
+                      const Icon(Icons.location_on_rounded, size: 16, color: AppColors.primary),
+                      const SizedBox(width: 6),
+                      Expanded(
+                        child: Text(
+                          gpsLoc,
+                          style: const TextStyle(
+                            color: AppColors.primary,
+                            fontSize: 11,
+                            fontWeight: FontWeight.w600,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                      IconButton(
+                        visualDensity: VisualDensity.compact,
+                        icon: const Icon(Icons.close_rounded, size: 16, color: AppColors.textMuted),
+                        tooltip: 'Bỏ tọa độ GPS',
+                        onPressed: () => ctrl.clearTaggedGpsLocation(),
+                      ),
+                    ],
+                  )
+                : InkWell(
+                    onTap: ctrl.isFetchingLocation
+                        ? null
+                        : () async {
+                            final loc = await ctrl.fetchGpsLocation();
+                            if (loc != null && mounted) {
+                              DialogHelper.showSnackBar(context, '📍 Đã gắn GPS: $loc');
+                            } else if (mounted) {
+                              DialogHelper.showSnackBar(
+                                context,
+                                '⚠️ Không thể lấy GPS. Vui lòng bật định vị thiết bị.',
+                              );
+                            }
+                          },
+                    borderRadius: BorderRadius.circular(8),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 4),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          if (ctrl.isFetchingLocation)
+                            const SizedBox(
+                              width: 14,
+                              height: 14,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 1.8,
+                                color: AppColors.primary,
+                              ),
+                            )
+                          else
+                            const Icon(
+                              Icons.location_on_outlined,
+                              size: 18,
+                              color: AppColors.textSecondary,
+                            ),
+                          const SizedBox(width: 6),
+                          Text(
+                            ctrl.isFetchingLocation ? 'Đang lấy vị trí...' : 'Gắn GPS',
+                            style: const TextStyle(
+                              color: AppColors.textPrimary,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
           ),
         ],
-      ),
-    );
-  }
-
-  Widget _buildSpeechChip(InspectionController ctrl, String text) {
-    return InkWell(
-      onTap: () {
-        ctrl.setLiveTranscript(text);
-      },
-      borderRadius: BorderRadius.circular(6),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-        decoration: BoxDecoration(
-          color: AppColors.background,
-          borderRadius: BorderRadius.circular(6),
-          border: Border.all(color: AppColors.cardBorder),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Icon(Icons.mic_none_rounded, size: 12, color: AppColors.primary),
-            const SizedBox(width: 4),
-            Text(
-              text,
-              style: const TextStyle(
-                color: AppColors.textPrimary,
-                fontSize: 10.5,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-          ],
-        ),
       ),
     );
   }
@@ -550,6 +405,77 @@ class _VoiceCaptureScreenState extends State<VoiceCaptureScreen> {
     );
   }
 
+  void _showTestScenarioMenu() {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: AppColors.surface,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text(
+                    'Kịch bản kiểm thử mẫu',
+                    style: TextStyle(
+                      color: AppColors.textPrimary,
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.close, color: AppColors.textMuted),
+                    onPressed: () => Navigator.of(ctx).pop(),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              ..._commonScenarios.map(
+                (s) => ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  leading: CircleAvatar(
+                    backgroundColor: (s['color'] as Color).withValues(alpha: 0.15),
+                    child: Icon(s['icon'] as IconData, color: s['color'] as Color, size: 20),
+                  ),
+                  title: Text(
+                    s['title'] as String,
+                    style: const TextStyle(color: AppColors.textPrimary, fontSize: 13.5, fontWeight: FontWeight.w600),
+                  ),
+                  subtitle: Text(
+                    s['location'] as String,
+                    style: const TextStyle(color: AppColors.textMuted, fontSize: 11.5),
+                  ),
+                  onTap: () async {
+                    Navigator.of(ctx).pop();
+                    final ticket = await widget.controller.extractFromText(s['text'] as String);
+                    if (!mounted) return;
+                    if (ticket != null) {
+                      Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (_) => TicketReviewScreen(
+                            controller: widget.controller,
+                            initialTicket: ticket,
+                          ),
+                        ),
+                      );
+                    }
+                  },
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   Future<void> _onRecordTap(InspectionController ctrl) async {
     if (ctrl.isRecording) {
       final ticket = await ctrl.stopRecordingAndExtract();
@@ -593,87 +519,45 @@ class _VoiceCaptureScreenState extends State<VoiceCaptureScreen> {
 
         return Scaffold(
           backgroundColor: AppColors.background,
-          appBar: widget.embeddedMode
-              ? null
-              : AppBar(
-                  backgroundColor: AppColors.background,
-                  elevation: 0,
-                  leading: IconButton(
+          appBar: AppBar(
+            backgroundColor: AppColors.background,
+            elevation: 0,
+            leading: widget.embeddedMode
+                ? null
+                : IconButton(
                     icon: const Icon(Icons.arrow_back_rounded, color: AppColors.textPrimary),
                     onPressed: () => Navigator.of(context).pop(),
                   ),
-                  title: const Text(
-                    'Thu âm hiện trường',
-                    style: TextStyle(color: AppColors.textPrimary, fontSize: 16, fontWeight: FontWeight.bold),
-                  ),
-                ),
+            title: const Text(
+              'Ghi nhận hiện trường',
+              style: TextStyle(
+                color: AppColors.textPrimary,
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            actions: [
+              IconButton(
+                icon: const Icon(Icons.playlist_add_rounded, color: AppColors.textSecondary),
+                tooltip: 'Kịch bản sự cố mẫu',
+                onPressed: _showTestScenarioMenu,
+              ),
+            ],
+          ),
           body: SafeArea(
             child: SingleChildScrollView(
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
                   InAppSyncBanner(controller: ctrl),
-                  // Header Title
-                  Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.all(14),
-                    decoration: BoxDecoration(
-                      color: AppColors.surface,
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: AppColors.cardBorder),
-                    ),
-                    child: Row(
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.all(8),
-                          decoration: BoxDecoration(
-                            color: AppColors.primary.withValues(alpha: 0.15),
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: const Icon(Icons.mic_none_rounded, color: AppColors.primary, size: 20),
-                        ),
-                        const SizedBox(width: 12),
-                        const Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                'Ghi âm mô tả sự cố hiện trường',
-                                style: TextStyle(
-                                  color: AppColors.textPrimary,
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                              SizedBox(height: 2),
-                              Text(
-                                'Nêu rõ: Vị trí cụ thể, tên thiết bị, hiện trạng và mức độ nguy cơ.',
-                                style: TextStyle(
-                                  color: AppColors.textMuted,
-                                  fontSize: 11.5,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
 
-                  const SizedBox(height: 16),
+                  // Compact Attachment Toolbar (Camera & GPS)
+                  _buildAttachmentToolbar(ctrl),
 
-                  // Photo Capture & Preview Section
-                  _buildPhotoCaptureSection(ctrl),
+                  const SizedBox(height: 36),
 
-                  const SizedBox(height: 10),
-
-                  // GPS 1-touch Acquisition Section
-                  _buildGpsTagSection(ctrl),
-
-                  const SizedBox(height: 24),
-
-                  // Center Wave Record Button
+                  // Wave Record Button
                   Center(
                     child: WaveRecordButton(
                       isRecording: ctrl.isRecording,
@@ -686,20 +570,55 @@ class _VoiceCaptureScreenState extends State<VoiceCaptureScreen> {
 
                   const SizedBox(height: 20),
 
-                  // Live Speech-to-Text Transcription Box (While Recording)
+                  // Recording Guidance
+                  if (ctrl.state == InspectionViewState.analyzing)
+                    const Column(
+                      children: [
+                        SizedBox(
+                          width: 22,
+                          height: 22,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2.2,
+                            valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
+                          ),
+                        ),
+                        SizedBox(height: 10),
+                        Text(
+                          'Đang xử lý âm thanh & lập biên bản...',
+                          style: TextStyle(
+                            color: AppColors.primaryLight,
+                            fontSize: 13,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
+                    )
+                  else
+                    Text(
+                      ctrl.isRecording
+                          ? 'Chạm nút vuông đỏ để hoàn tất & tạo phiếu'
+                          : 'Chạm micro để bắt đầu mô tả sự cố',
+                      style: const TextStyle(
+                        color: AppColors.textSecondary,
+                        fontSize: 13,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+
+                  const SizedBox(height: 24),
+
+                  // Sleek Live Transcript (while recording)
                   if (ctrl.isRecording) ...[
                     Container(
                       width: double.infinity,
-                      margin: const EdgeInsets.symmetric(horizontal: 4),
-                      padding: const EdgeInsets.all(14),
+                      padding: const EdgeInsets.all(16),
                       decoration: BoxDecoration(
                         color: AppColors.surface,
                         borderRadius: BorderRadius.circular(12),
                         border: Border.all(
                           color: ctrl.liveTranscript.isNotEmpty
-                              ? AppColors.primary
+                              ? AppColors.primary.withValues(alpha: 0.6)
                               : AppColors.cardBorder,
-                          width: 1.5,
                         ),
                       ),
                       child: Column(
@@ -717,12 +636,12 @@ class _VoiceCaptureScreenState extends State<VoiceCaptureScreen> {
                               ),
                               const SizedBox(width: 8),
                               const Text(
-                                'BÓC BĂNG TRỰC TIẾP (SPEECH-TO-TEXT)',
+                                'Lời thoại nhận diện thời gian thực',
                                 style: TextStyle(
                                   color: AppColors.primary,
                                   fontSize: 11,
                                   fontWeight: FontWeight.bold,
-                                  letterSpacing: 0.6,
+                                  letterSpacing: 0.4,
                                 ),
                               ),
                             ],
@@ -731,198 +650,35 @@ class _VoiceCaptureScreenState extends State<VoiceCaptureScreen> {
                           Text(
                             ctrl.liveTranscript.isNotEmpty
                                 ? ctrl.liveTranscript
-                                : 'Đang lắng nghe giọng nói... Hãy mô tả sự cố (ví dụ: "Bơm áp lực bị kẹt puly kêu to")',
+                                : 'Đang lắng nghe... Nêu rõ mã thiết bị, vị trí và hiện trạng hư hỏng.',
                             style: TextStyle(
                               color: ctrl.liveTranscript.isNotEmpty
                                   ? AppColors.textPrimary
                                   : AppColors.textMuted,
-                              fontSize: 13,
+                              fontSize: 13.5,
                               fontWeight: ctrl.liveTranscript.isNotEmpty
                                   ? FontWeight.w500
                                   : FontWeight.normal,
-                              fontStyle: ctrl.liveTranscript.isNotEmpty
-                                  ? FontStyle.normal
-                                  : FontStyle.italic,
                               height: 1.4,
                             ),
-                          ),
-                          const SizedBox(height: 10),
-                          const Text(
-                            'Gợi ý nhanh cho máy ảo / giả lập:',
-                            style: TextStyle(
-                              color: AppColors.textSecondary,
-                              fontSize: 11,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                          const SizedBox(height: 6),
-                          Wrap(
-                            spacing: 6,
-                            runSpacing: 6,
-                            children: [
-                              _buildSpeechChip(
-                                ctrl,
-                                'Puly máy bơm số 2 bị nứt vỡ kêu to',
-                              ),
-                              _buildSpeechChip(
-                                ctrl,
-                                'Rò rỉ van dầu DN50 phân xưởng cán thép',
-                              ),
-                              _buildSpeechChip(
-                                ctrl,
-                                'Aptomat tủ điện tổng quá nhiệt bốc khói',
-                              ),
-                            ],
                           ),
                         ],
                       ),
                     ),
-                    const SizedBox(height: 16),
+                    const SizedBox(height: 20),
                   ],
 
-                  // Status indicator
-                  if (ctrl.state == InspectionViewState.analyzing)
-                    const Column(
-                      children: [
-                        SizedBox(
-                          width: 24,
-                          height: 24,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2.5,
-                            valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
-                          ),
-                        ),
-                        SizedBox(height: 10),
-                        Text(
-                          'Đang xử lý âm thanh & cấu trúc biên bản...',
-                          style: TextStyle(
-                            color: AppColors.primaryLight,
-                            fontSize: 13,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ],
-                    )
-                  else
-                    Text(
-                      ctrl.isRecording
-                          ? 'Nhấn nút vuông đỏ để dừng & lập biên bản'
-                          : 'Nhấn vào micro để bắt đầu ghi âm',
-                      style: const TextStyle(
-                        color: AppColors.textSecondary,
-                        fontSize: 13,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-
-                  const SizedBox(height: 28),
-
-                  // Manual Note Button (For noisy environment)
-                  OutlinedButton.icon(
+                  // Alternative input: Keyboard note
+                  TextButton.icon(
                     onPressed: _showTextPromptModal,
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: AppColors.textPrimary,
-                      side: const BorderSide(color: AppColors.cardBorder),
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                    style: TextButton.styleFrom(
+                      foregroundColor: AppColors.textSecondary,
+                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
                     ),
                     icon: const Icon(Icons.keyboard_alt_outlined, size: 16),
-                    label: const Text('Môi trường ồn? Nhập văn bản thủ công', style: TextStyle(fontSize: 12.5)),
-                  ),
-
-                  const SizedBox(height: 30),
-
-                  // Common Inspection Scenarios
-                  Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.all(14),
-                    decoration: BoxDecoration(
-                      color: AppColors.surface,
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: AppColors.cardBorder),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Row(
-                          children: [
-                            Icon(Icons.flash_on_rounded, color: AppColors.primary, size: 16),
-                            SizedBox(width: 6),
-                            Text(
-                              'Biên bản mẫu thường gặp:',
-                              style: TextStyle(
-                                color: AppColors.textPrimary,
-                                fontSize: 13,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 10),
-                        ..._commonScenarios.map(
-                          (scenario) => Padding(
-                            padding: const EdgeInsets.only(bottom: 8.0),
-                            child: Material(
-                              color: Colors.transparent,
-                              child: InkWell(
-                                onTap: () async {
-                                  final ticket = await ctrl.extractFromText(scenario['text'] as String);
-                                  if (!context.mounted) return;
-                                  if (ticket != null) {
-                                    Navigator.of(context).push(
-                                      MaterialPageRoute(
-                                        builder: (_) => TicketReviewScreen(
-                                          controller: ctrl,
-                                          initialTicket: ticket,
-                                        ),
-                                      ),
-                                    );
-                                  }
-                                },
-                                borderRadius: BorderRadius.circular(8),
-                                child: Container(
-                                  padding: const EdgeInsets.all(10),
-                                  decoration: BoxDecoration(
-                                    color: AppColors.background,
-                                    borderRadius: BorderRadius.circular(8),
-                                    border: Border.all(color: AppColors.cardBorder),
-                                  ),
-                                  child: Row(
-                                    children: [
-                                      Icon(scenario['icon'] as IconData, color: scenario['color'] as Color, size: 20),
-                                      const SizedBox(width: 10),
-                                      Expanded(
-                                        child: Column(
-                                          crossAxisAlignment: CrossAxisAlignment.start,
-                                          children: [
-                                            Text(
-                                              scenario['title'] as String,
-                                              style: const TextStyle(
-                                                color: AppColors.textPrimary,
-                                                fontSize: 12.5,
-                                                fontWeight: FontWeight.w600,
-                                              ),
-                                            ),
-                                            const SizedBox(height: 2),
-                                            Text(
-                                              scenario['location'] as String,
-                                              style: const TextStyle(
-                                                color: AppColors.textMuted,
-                                                fontSize: 11,
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-                                      const Icon(Icons.arrow_forward_ios_rounded, color: AppColors.textMuted, size: 12),
-                                    ],
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ),
-                        ),
-                      ],
+                    label: const Text(
+                      'Môi trường quá ồn? Nhập bằng bàn phím',
+                      style: TextStyle(fontSize: 12),
                     ),
                   ),
 
