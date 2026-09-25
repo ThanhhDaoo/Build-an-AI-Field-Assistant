@@ -18,13 +18,13 @@
 
   <meta charset="UTF-8">
   <meta content="IE=Edge" http-equiv="X-UA-Compatible">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <meta name="description" content="AI Field Assistant - Voice-to-Ticket Field Inspection & Maintenance Automation">
-  <meta name="theme-color" content="#0F172A">
+  <meta name="theme-color" content="#F8FAFC">
 
   <!-- iOS meta tags & icons -->
   <meta name="mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="apple-mobile-web-app-title" content="Field AI Assistant">
   <link rel="apple-touch-icon" href="icons/Icon-192.png">
 
@@ -33,6 +33,52 @@
 
   <title>Field AI Assistant - Voice Field Inspection</title>
   <link rel="manifest" href="manifest.json">
+
+  <style>
+    html, body {
+      height: 100%;
+      height: 100dvh;
+      width: 100%;
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
+      touch-action: pan-x pan-y;
+      -webkit-text-size-adjust: 100%;
+      background-color: #F8FAFC;
+    }
+
+    /* Prevent mobile Safari from zooming in on input focus */
+    input, textarea, select {
+      font-size: 16px !important;
+    }
+
+    /* Ensure Flutter Web canvas fits viewport exactly */
+    flt-glass-pane {
+      height: 100% !important;
+      width: 100% !important;
+    }
+  </style>
+
+  <script>
+    // Prevent iOS Safari bounce and viewport shifts when virtual keyboard toggles
+    window.addEventListener('blur', function() {
+      window.scrollTo(0, 0);
+    });
+    window.addEventListener('focusout', function() {
+      window.scrollTo(0, 0);
+      if (document.body) document.body.scrollTop = 0;
+    });
+    if (window.visualViewport) {
+      window.visualViewport.addEventListener('resize', function() {
+        window.scrollTo(0, 0);
+      });
+      window.visualViewport.addEventListener('scroll', function() {
+        if (window.scrollY !== 0) {
+          window.scrollTo(0, 0);
+        }
+      });
+    }
+  </script>
 </head>
 <body>
   <!--

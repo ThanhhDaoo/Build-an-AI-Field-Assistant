@@ -211,7 +211,7 @@ class _TicketReviewScreenState extends State<TicketReviewScreen> {
               TextField(
                 controller: nameCtrl,
                 autofocus: true,
-                style: const TextStyle(color: AppColors.textPrimary, fontSize: 13.5),
+                style: const TextStyle(color: AppColors.textPrimary, fontSize: 15),
                 decoration: _inputDecoration(hint: 'Ví dụ: Gioăng chịu nhiệt DN50...'),
               ),
               const SizedBox(height: 14),
@@ -303,7 +303,7 @@ class _TicketReviewScreenState extends State<TicketReviewScreen> {
           controller: issueCtrl,
           autofocus: true,
           maxLines: 3,
-          style: const TextStyle(color: AppColors.textPrimary, fontSize: 13.5),
+          style: const TextStyle(color: AppColors.textPrimary, fontSize: 15),
           decoration: _inputDecoration(hint: 'Mô tả ngắn gọn lỗi phát hiện...'),
         ),
         actions: [
@@ -461,12 +461,16 @@ class _TicketReviewScreenState extends State<TicketReviewScreen> {
         ),
       ),
       body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              InAppSyncBanner(controller: widget.controller),
+        child: GestureDetector(
+          onTap: () => FocusScope.of(context).unfocus(),
+          behavior: HitTestBehavior.translucent,
+          child: SingleChildScrollView(
+            keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                InAppSyncBanner(controller: widget.controller),
 
               // ================= SECTION 1: THIẾT BỊ & ĐỘ ƯU TIÊN =================
               _buildSectionContainer(
@@ -636,7 +640,7 @@ class _TicketReviewScreenState extends State<TicketReviewScreen> {
                     controller: _equipmentIdController,
                     style: const TextStyle(
                       color: AppColors.textPrimary,
-                      fontSize: 14,
+                      fontSize: 15,
                       fontWeight: FontWeight.bold,
                       letterSpacing: 0.6,
                     ),
@@ -654,7 +658,7 @@ class _TicketReviewScreenState extends State<TicketReviewScreen> {
                     controller: _titleController,
                     style: const TextStyle(
                       color: AppColors.textPrimary,
-                      fontSize: 13.5,
+                      fontSize: 15,
                       fontWeight: FontWeight.w600,
                     ),
                     decoration: _inputDecoration(hint: 'Mô tả ngắn gọn sự cố...'),
@@ -754,7 +758,7 @@ class _TicketReviewScreenState extends State<TicketReviewScreen> {
                   ),
                   TextField(
                     controller: _locationController,
-                    style: const TextStyle(color: AppColors.textPrimary, fontSize: 13),
+                    style: const TextStyle(color: AppColors.textPrimary, fontSize: 15),
                     decoration: _inputDecoration(
                       hint: 'Ví dụ: Phân xưởng cán thép 2, Trạm biến áp T1...',
                       prefixIcon: Icons.place_outlined,
@@ -791,7 +795,7 @@ class _TicketReviewScreenState extends State<TicketReviewScreen> {
                         widget.initialTicket.rawTranscript!,
                         style: const TextStyle(
                           color: AppColors.textPrimary,
-                          fontSize: 12.5,
+                          fontSize: 13,
                           height: 1.4,
                           fontStyle: FontStyle.italic,
                         ),
@@ -805,7 +809,7 @@ class _TicketReviewScreenState extends State<TicketReviewScreen> {
                   TextField(
                     controller: _descriptionController,
                     maxLines: 3,
-                    style: const TextStyle(color: AppColors.textPrimary, fontSize: 13, height: 1.4),
+                    style: const TextStyle(color: AppColors.textPrimary, fontSize: 15, height: 1.4),
                     decoration: _inputDecoration(hint: 'Mô tả chi tiết sự cố phát hiện...'),
                   ),
 
@@ -1006,7 +1010,7 @@ class _TicketReviewScreenState extends State<TicketReviewScreen> {
                   TextField(
                     controller: _actionController,
                     maxLines: 2,
-                    style: const TextStyle(color: AppColors.textPrimary, fontSize: 13, height: 1.4),
+                    style: const TextStyle(color: AppColors.textPrimary, fontSize: 15, height: 1.4),
                     decoration: _inputDecoration(hint: 'Giải pháp xử lý tức thời hoặc kế hoạch sửa chữa...'),
                   ),
 
@@ -1016,7 +1020,7 @@ class _TicketReviewScreenState extends State<TicketReviewScreen> {
                   _buildFieldLabel('Kỹ sư lập biên bản'),
                   TextField(
                     controller: _inspectorController,
-                    style: const TextStyle(color: AppColors.textPrimary, fontSize: 13),
+                    style: const TextStyle(color: AppColors.textPrimary, fontSize: 15),
                     decoration: _inputDecoration(
                       hint: 'Tên kỹ sư kiểm tra...',
                       prefixIcon: Icons.badge_outlined,
@@ -1039,8 +1043,9 @@ class _TicketReviewScreenState extends State<TicketReviewScreen> {
           ),
         ),
       ),
-    );
-  }
+    ),
+  );
+}
 
   /// 3-State Priority Selector
   Widget _buildPrioritySelector() {

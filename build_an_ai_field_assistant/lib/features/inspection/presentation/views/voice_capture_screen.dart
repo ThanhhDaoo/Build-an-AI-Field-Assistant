@@ -352,7 +352,7 @@ class _VoiceCaptureScreenState extends State<VoiceCaptureScreen> {
             TextField(
               controller: _quickNoteController,
               maxLines: 4,
-              style: const TextStyle(color: AppColors.textPrimary),
+              style: const TextStyle(color: AppColors.textPrimary, fontSize: 15),
               decoration: InputDecoration(
                 hintText: 'Nhập ghi chú hiện trường: Vị trí, thiết bị, hiện trạng...',
                 hintStyle: const TextStyle(color: AppColors.textMuted),
