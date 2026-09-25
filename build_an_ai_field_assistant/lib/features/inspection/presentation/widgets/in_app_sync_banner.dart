@@ -68,12 +68,12 @@ class _InAppSyncBannerState extends State<InAppSyncBanner> with SingleTickerProv
         margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
         decoration: BoxDecoration(
-          color: const Color(0xFF064E3B), // Deep emerald
+          color: const Color(0xFFECFDF5), // Emerald 50
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: const Color(0xFF10B981), width: 1.2), // Bright emerald
+          border: Border.all(color: const Color(0xFF10B981), width: 1.2),
           boxShadow: [
             BoxShadow(
-              color: const Color(0xFF10B981).withValues(alpha: 0.25),
+              color: Colors.black.withValues(alpha: 0.06),
               blurRadius: 10,
               offset: const Offset(0, 4),
             ),
@@ -89,7 +89,7 @@ class _InAppSyncBannerState extends State<InAppSyncBanner> with SingleTickerProv
               ),
               child: const Icon(
                 Icons.cloud_done_rounded,
-                color: Color(0xFF10B981),
+                color: Color(0xFF059669),
                 size: 20,
               ),
             ),
@@ -98,9 +98,9 @@ class _InAppSyncBannerState extends State<InAppSyncBanner> with SingleTickerProv
               child: Text(
                 message,
                 style: const TextStyle(
-                  color: Colors.white,
+                  color: Color(0xFF065F46), // Emerald 900
                   fontSize: 12.5,
-                  fontWeight: FontWeight.w600,
+                  fontWeight: FontWeight.bold,
                   height: 1.3,
                 ),
               ),

@@ -77,7 +77,7 @@ class _SwipeToSubmitButtonState extends State<SwipeToSubmitButton>
             border: Border.all(color: AppColors.cardBorder, width: 1.5),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withValues(alpha: 0.25),
+                color: Colors.black.withValues(alpha: 0.06),
                 blurRadius: 10,
                 offset: const Offset(0, 4),
               ),
@@ -92,8 +92,8 @@ class _SwipeToSubmitButtonState extends State<SwipeToSubmitButton>
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
                     colors: [
-                      AppColors.primary.withValues(alpha: 0.2),
-                      AppColors.primary.withValues(alpha: 0.4),
+                      AppColors.primary.withValues(alpha: 0.15),
+                      AppColors.primary.withValues(alpha: 0.3),
                     ],
                   ),
                   borderRadius: BorderRadius.circular(24),
@@ -108,7 +108,7 @@ class _SwipeToSubmitButtonState extends State<SwipeToSubmitButton>
                     Text(
                       widget.label,
                       style: const TextStyle(
-                        color: AppColors.textSecondary,
+                        color: AppColors.textPrimary,
                         fontSize: 14,
                         fontWeight: FontWeight.w600,
                         letterSpacing: 0.3,
@@ -117,7 +117,7 @@ class _SwipeToSubmitButtonState extends State<SwipeToSubmitButton>
                     const SizedBox(width: 6),
                     const Icon(
                       Icons.keyboard_double_arrow_right_rounded,
-                      color: AppColors.primaryLight,
+                      color: AppColors.primary,
                       size: 18,
                     ),
                   ],
