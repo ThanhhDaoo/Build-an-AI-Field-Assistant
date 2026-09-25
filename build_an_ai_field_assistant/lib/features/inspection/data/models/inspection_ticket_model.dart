@@ -17,6 +17,7 @@ class InspectionTicketModel extends InspectionTicket {
     super.confidenceScore,
     super.rawTranscript,
     super.audioPath,
+    super.imagePath,
     super.equipmentId,
     super.detectedIssues = const [],
     super.requiredParts = const [],
@@ -39,6 +40,7 @@ class InspectionTicketModel extends InspectionTicket {
       confidenceScore: entity.confidenceScore,
       rawTranscript: entity.rawTranscript,
       audioPath: entity.audioPath,
+      imagePath: entity.imagePath,
       equipmentId: entity.equipmentId,
       detectedIssues: entity.detectedIssues,
       requiredParts: entity.requiredParts,
@@ -95,6 +97,7 @@ class InspectionTicketModel extends InspectionTicket {
     Map<String, dynamic> json, {
     String? rawTranscript,
     String? audioPath,
+    String? imagePath,
   }) {
     final now = DateTime.now();
     return InspectionTicketModel(
@@ -110,6 +113,7 @@ class InspectionTicketModel extends InspectionTicket {
       confidenceScore: (json['confidence_score'] as num?)?.toDouble() ?? 0.95,
       rawTranscript: rawTranscript ?? json['raw_transcript'] as String?,
       audioPath: audioPath ?? json['audio_path'] as String?,
+      imagePath: imagePath ?? json['image_path'] as String?,
       equipmentId: (json['equipment_id'] ?? json['equipmentId']) as String?,
       detectedIssues: _parseIssues(json['detected_issues'] ?? json['detectedIssues']),
       requiredParts: _parseParts(json['required_parts'] ?? json['requiredParts']),
@@ -127,6 +131,7 @@ class InspectionTicketModel extends InspectionTicket {
     Map<String, dynamic> map, {
     String? rawTranscript,
     String? audioPath,
+    String? imagePath,
   }) {
     final now = DateTime.now();
     return InspectionTicketModel(
@@ -142,6 +147,7 @@ class InspectionTicketModel extends InspectionTicket {
       confidenceScore: (map['confidence_score'] as num?)?.toDouble() ?? 0.95,
       rawTranscript: rawTranscript,
       audioPath: audioPath,
+      imagePath: imagePath ?? map['image_path'] as String?,
       equipmentId: (map['equipment_id'] ?? map['equipmentId']) as String?,
       detectedIssues: _parseIssues(map['detected_issues'] ?? map['detectedIssues']),
       requiredParts: _parseParts(map['required_parts'] ?? map['requiredParts']),
@@ -165,6 +171,7 @@ class InspectionTicketModel extends InspectionTicket {
       'confidence_score': confidenceScore,
       'raw_transcript': rawTranscript,
       'audio_path': audioPath,
+      'image_path': imagePath,
       'equipment_id': equipmentId,
       'detected_issues': detectedIssues,
       'required_parts': requiredParts.map((p) => p.toJson()).toList(),
@@ -188,6 +195,7 @@ class InspectionTicketModel extends InspectionTicket {
       confidenceScore: (map['confidence_score'] as num?)?.toDouble() ?? 0.9,
       rawTranscript: map['raw_transcript'] as String?,
       audioPath: map['audio_path'] as String?,
+      imagePath: map['image_path'] as String?,
       equipmentId: map['equipment_id'] as String?,
       detectedIssues: _parseIssues(map['detected_issues']),
       requiredParts: _parseParts(map['required_parts']),
@@ -211,6 +219,7 @@ class InspectionTicketModel extends InspectionTicket {
       'confidence_score': confidenceScore,
       'raw_transcript': rawTranscript,
       'audio_path': audioPath,
+      'image_path': imagePath,
       'equipment_id': equipmentId,
       'detected_issues': jsonEncode(detectedIssues),
       'required_parts': jsonEncode(requiredParts.map((p) => p.toJson()).toList()),

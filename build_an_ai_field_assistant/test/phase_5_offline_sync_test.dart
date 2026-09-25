@@ -50,6 +50,19 @@ class MockRemoteDataSource implements IInspectionRemoteDataSource {
     required String text,
     String? apiKey,
     String? audioPath,
+    String? imagePath,
+  }) async {
+    throw UnimplementedError();
+  }
+
+  @override
+  Future<InspectionTicketModel> extractTicketMultimodal({
+    io.File? audioFile,
+    String? audioPath,
+    io.File? imageFile,
+    String? imagePath,
+    String? apiKey,
+    String? userNote,
   }) async {
     throw UnimplementedError();
   }

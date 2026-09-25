@@ -1,6 +1,9 @@
 import 'dart:async';
+import 'dart:io';
 import 'package:audioplayers/audioplayers.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_constants.dart';
 import '../../../../core/di/injection_container.dart';
@@ -38,6 +41,7 @@ class _TicketReviewScreenState extends State<TicketReviewScreen> {
   late String _selectedCategory;
   late List<String> _detectedIssues;
   late List<InspectionPart> _requiredParts;
+  String? _currentImagePath;
   bool _isSubmitting = false;
 
   @override
@@ -50,6 +54,7 @@ class _TicketReviewScreenState extends State<TicketReviewScreen> {
     _descriptionController = TextEditingController(text: t.description);
     _actionController = TextEditingController(text: t.suggestedAction);
     _inspectorController = TextEditingController(text: t.inspectorName);
+    _currentImagePath = t.imagePath;
 
     // Map initial priority to standard 3 levels if necessary
     final initialP = t.priority.toLowerCase();
@@ -99,6 +104,7 @@ class _TicketReviewScreenState extends State<TicketReviewScreen> {
       category: _selectedCategory,
       detectedIssues: _detectedIssues,
       requiredParts: _requiredParts,
+      imagePath: _currentImagePath,
     );
   }
 
@@ -297,6 +303,240 @@ class _TicketReviewScreenState extends State<TicketReviewScreen> {
     );
   }
 
+  Future<void> _pickImageForTicket(ImageSource source) async {
+    try {
+      final picker = ImagePicker();
+      final pickedFile = await picker.pickImage(
+        source: source,
+        maxWidth: 1600,
+        maxHeight: 1600,
+        imageQuality: 85,
+      );
+      if (pickedFile != null) {
+        setState(() => _currentImagePath = pickedFile.path);
+      }
+    } catch (e) {
+      debugPrint('Lỗi chọn/chụp ảnh: $e');
+      if (mounted) {
+        DialogHelper.showSnackBar(context, 'Không thể cập nhật ảnh: $e', isError: true);
+      }
+    }
+  }
+
+  Widget _buildImageWidget(String path, {BoxFit fit = BoxFit.cover}) {
+    if (kIsWeb || path.startsWith('http')) {
+      return Image.network(
+        path,
+        fit: fit,
+        errorBuilder: (_, _, _) => const Center(
+          child: Icon(Icons.broken_image_rounded, color: AppColors.textMuted, size: 32),
+        ),
+      );
+    }
+    return Image.file(
+      File(path),
+      fit: fit,
+      errorBuilder: (_, _, _) => const Center(
+        child: Icon(Icons.broken_image_rounded, color: AppColors.textMuted, size: 32),
+      ),
+    );
+  }
+
+  void _showFullScreenImage(BuildContext context, String path) {
+    showDialog(
+      context: context,
+      builder: (ctx) => Dialog(
+        backgroundColor: Colors.black,
+        insetPadding: EdgeInsets.zero,
+        child: Stack(
+          children: [
+            Center(
+              child: InteractiveViewer(
+                panEnabled: true,
+                minScale: 0.8,
+                maxScale: 4.0,
+                child: _buildImageWidget(path, fit: BoxFit.contain),
+              ),
+            ),
+            Positioned(
+              top: 40,
+              right: 20,
+              child: IconButton(
+                icon: const Icon(Icons.close_rounded, color: Colors.white, size: 28),
+                onPressed: () => Navigator.of(ctx).pop(),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPhotoInspectionCard() {
+    return _buildCardContainer(
+      title: 'HÌNH ẢNH HIỆN TRƯỜNG (VISUAL INSPECTION)',
+      children: [
+        if (_currentImagePath != null && _currentImagePath!.isNotEmpty) ...[
+          GestureDetector(
+            onTap: () => _showFullScreenImage(context, _currentImagePath!),
+            child: Container(
+              width: double.infinity,
+              height: 200,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: AppColors.primary.withValues(alpha: 0.5), width: 1.5),
+              ),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(9),
+                child: Stack(
+                  fit: StackFit.expand,
+                  children: [
+                    _buildImageWidget(_currentImagePath!),
+                    Positioned(
+                      top: 10,
+                      left: 10,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: Colors.black.withValues(alpha: 0.7),
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: const Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.camera_alt_rounded, size: 12, color: AppColors.primary),
+                            SizedBox(width: 4),
+                            Text(
+                              'ẢNH CHỤP HIỆN TRƯỜNG',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 10,
+                                fontWeight: FontWeight.bold,
+                                letterSpacing: 0.5,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                    Positioned(
+                      bottom: 10,
+                      right: 10,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: Colors.black.withValues(alpha: 0.7),
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: const Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.zoom_in_rounded, size: 14, color: Colors.white),
+                            SizedBox(width: 4),
+                            Text(
+                              'Chạm để phóng to',
+                              style: TextStyle(color: Colors.white, fontSize: 11),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(height: 10),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: [
+              OutlinedButton.icon(
+                onPressed: () => _pickImageForTicket(ImageSource.camera),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: AppColors.textSecondary,
+                  side: const BorderSide(color: AppColors.cardBorder),
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                ),
+                icon: const Icon(Icons.camera_alt_outlined, size: 14),
+                label: const Text('Chụp lại', style: TextStyle(fontSize: 11)),
+              ),
+              const SizedBox(width: 8),
+              OutlinedButton.icon(
+                onPressed: () => _pickImageForTicket(ImageSource.gallery),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: AppColors.textSecondary,
+                  side: const BorderSide(color: AppColors.cardBorder),
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                ),
+                icon: const Icon(Icons.photo_library_outlined, size: 14),
+                label: const Text('Đổi ảnh', style: TextStyle(fontSize: 11)),
+              ),
+              const SizedBox(width: 8),
+              TextButton.icon(
+                onPressed: () => setState(() => _currentImagePath = null),
+                style: TextButton.styleFrom(
+                  foregroundColor: AppColors.priorityHigh,
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                ),
+                icon: const Icon(Icons.delete_outline_rounded, size: 14),
+                label: const Text('Xóa', style: TextStyle(fontSize: 11)),
+              ),
+            ],
+          ),
+        ] else ...[
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: AppColors.background,
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(color: AppColors.cardBorder),
+            ),
+            child: Column(
+              children: [
+                const Icon(Icons.add_a_photo_outlined, color: AppColors.textMuted, size: 36),
+                const SizedBox(height: 8),
+                const Text(
+                  'Chưa có ảnh chụp sự cố cho biên bản này',
+                  style: TextStyle(color: AppColors.textSecondary, fontSize: 12),
+                ),
+                const SizedBox(height: 12),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    ElevatedButton.icon(
+                      onPressed: () => _pickImageForTicket(ImageSource.camera),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.primary,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                      ),
+                      icon: const Icon(Icons.camera_alt_rounded, size: 16),
+                      label: const Text('Chụp ảnh bổ sung', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                    ),
+                    const SizedBox(width: 8),
+                    OutlinedButton.icon(
+                      onPressed: () => _pickImageForTicket(ImageSource.gallery),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: AppColors.textPrimary,
+                        side: const BorderSide(color: AppColors.cardBorder),
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                      ),
+                      icon: const Icon(Icons.photo_library_outlined, size: 16),
+                      label: const Text('Thư viện', style: TextStyle(fontSize: 12)),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ],
+      ],
+    );
+  }
+
   String _getCategoryLabel(String cat) {
     switch (cat) {
       case 'electrical':
@@ -401,6 +641,10 @@ class _TicketReviewScreenState extends State<TicketReviewScreen> {
                 _AudioPlaybackCard(audioPath: widget.initialTicket.audioPath!),
                 const SizedBox(height: 16),
               ],
+
+              // Visual Inspection Photo Card
+              _buildPhotoInspectionCard(),
+              const SizedBox(height: 16),
 
               // Speech-to-Text Extracted Transcript Card
               if (widget.initialTicket.rawTranscript != null &&

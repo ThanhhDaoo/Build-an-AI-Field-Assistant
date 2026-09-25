@@ -15,11 +15,21 @@ abstract class IInspectionRemoteDataSource {
     required String text,
     String? apiKey,
     String? audioPath,
+    String? imagePath,
   });
 
   Future<InspectionTicketModel> extractTicketFromAudio({
     io.File? audioFile,
     String? audioPath,
+    String? apiKey,
+    String? userNote,
+  });
+
+  Future<InspectionTicketModel> extractTicketMultimodal({
+    io.File? audioFile,
+    String? audioPath,
+    io.File? imageFile,
+    String? imagePath,
     String? apiKey,
     String? userNote,
   });
@@ -57,10 +67,20 @@ class InspectionRemoteDataSourceImpl implements IInspectionRemoteDataSource {
     required String text,
     String? apiKey,
     String? audioPath,
+    String? imagePath,
   }) async {
+    if (imagePath != null && imagePath.isNotEmpty) {
+      return extractTicketMultimodal(
+        userNote: text,
+        apiKey: apiKey,
+        audioPath: audioPath,
+        imagePath: imagePath,
+      );
+    }
+
     // If no API key provided, utilize smart offline AI fallback extractor
     if (apiKey == null || apiKey.trim().isEmpty) {
-      return _fallbackSmartExtraction(text, audioPath: audioPath);
+      return _fallbackSmartExtraction(text, audioPath: audioPath, imagePath: imagePath);
     }
 
     try {
@@ -91,16 +111,17 @@ class InspectionRemoteDataSourceImpl implements IInspectionRemoteDataSource {
         parsedJson,
         rawTranscript: text,
         audioPath: audioPath,
+        imagePath: imagePath,
       );
     } on io.SocketException catch (e) {
       debugPrint('Mất kết nối mạng khi trích xuất text: $e');
-      return _fallbackSmartExtraction(text, audioPath: audioPath, fallbackReason: 'Ngoại tuyến');
+      return _fallbackSmartExtraction(text, audioPath: audioPath, imagePath: imagePath, fallbackReason: 'Ngoại tuyến');
     } on TimeoutException catch (e) {
       debugPrint('Hết thời gian chờ phản hồi Gemini text: $e');
-      return _fallbackSmartExtraction(text, audioPath: audioPath, fallbackReason: 'Quá thời gian mạng');
+      return _fallbackSmartExtraction(text, audioPath: audioPath, imagePath: imagePath, fallbackReason: 'Quá thời gian mạng');
     } catch (e) {
       debugPrint('Lỗi trích xuất Gemini text: $e');
-      return _fallbackSmartExtraction(text, audioPath: audioPath);
+      return _fallbackSmartExtraction(text, audioPath: audioPath, imagePath: imagePath);
     }
   }
 
@@ -110,7 +131,7 @@ class InspectionRemoteDataSourceImpl implements IInspectionRemoteDataSource {
     String? apiKey,
     String? userNote,
   }) async {
-    return extractTicketFromAudio(
+    return extractTicketMultimodal(
       audioFile: audioFile,
       apiKey: apiKey,
       userNote: userNote,
@@ -124,56 +145,101 @@ class InspectionRemoteDataSourceImpl implements IInspectionRemoteDataSource {
     String? apiKey,
     String? userNote,
   }) async {
-    // 1. Resolve File and Path
-    io.File? file;
-    String resolvedPath = '';
+    return extractTicketMultimodal(
+      audioFile: audioFile,
+      audioPath: audioPath,
+      apiKey: apiKey,
+      userNote: userNote,
+    );
+  }
 
-    if (audioFile != null) {
-      file = audioFile;
-      resolvedPath = audioFile.path;
+  @override
+  Future<InspectionTicketModel> extractTicketMultimodal({
+    io.File? audioFile,
+    String? audioPath,
+    io.File? imageFile,
+    String? imagePath,
+    String? apiKey,
+    String? userNote,
+  }) async {
+    // 1. Resolve Audio and Image Files/Paths
+    io.File? aFile = audioFile;
+    String resolvedAudioPath = '';
+    if (aFile != null) {
+      resolvedAudioPath = aFile.path;
     } else if (audioPath != null && audioPath.isNotEmpty) {
-      file = io.File(audioPath);
-      resolvedPath = audioPath;
+      aFile = io.File(audioPath);
+      resolvedAudioPath = audioPath;
+    }
+
+    io.File? imgFile = imageFile;
+    String resolvedImagePath = '';
+    if (imgFile != null) {
+      resolvedImagePath = imgFile.path;
+    } else if (imagePath != null && imagePath.isNotEmpty) {
+      imgFile = io.File(imagePath);
+      resolvedImagePath = imagePath;
     }
 
     // 2. Safe Fallback if no Gemini API Key is provided
     if (apiKey == null || apiKey.trim().isEmpty) {
-      return _fallbackAudioExtraction(resolvedPath, userNote: userNote);
+      return _fallbackAudioExtraction(
+        resolvedAudioPath,
+        imagePath: resolvedImagePath,
+        userNote: userNote,
+      );
     }
 
     try {
       final systemPrompt = await _getSystemPrompt();
 
       Uint8List? audioBytes;
-      String mimeType = 'audio/mp4';
+      String audioMime = 'audio/mp4';
 
-      if (!kIsWeb && file != null && await file.exists()) {
-        audioBytes = await file.readAsBytes();
-        final lower = resolvedPath.toLowerCase();
+      if (!kIsWeb && aFile != null && await aFile.exists()) {
+        audioBytes = await aFile.readAsBytes();
+        final lower = resolvedAudioPath.toLowerCase();
         if (lower.endsWith('.wav')) {
-          mimeType = 'audio/wav';
+          audioMime = 'audio/wav';
         } else if (lower.endsWith('.mp3')) {
-          mimeType = 'audio/mp3';
+          audioMime = 'audio/mp3';
         } else if (lower.endsWith('.aac')) {
-          mimeType = 'audio/aac';
+          audioMime = 'audio/aac';
         } else {
-          mimeType = 'audio/mp4';
+          audioMime = 'audio/mp4';
         }
       }
 
-      // If audio file is missing or empty, fallback to text extraction or heuristic
-      if (audioBytes == null || audioBytes.isEmpty) {
+      Uint8List? imageBytes;
+      String imageMime = 'image/jpeg';
+      if (!kIsWeb && imgFile != null && await imgFile.exists()) {
+        imageBytes = await imgFile.readAsBytes();
+        final lower = resolvedImagePath.toLowerCase();
+        if (lower.endsWith('.png')) {
+          imageMime = 'image/png';
+        } else if (lower.endsWith('.webp')) {
+          imageMime = 'image/webp';
+        } else {
+          imageMime = 'image/jpeg';
+        }
+      }
+
+      // If both audio and image are missing, fallback to text or heuristic
+      if ((audioBytes == null || audioBytes.isEmpty) &&
+          (imageBytes == null || imageBytes.isEmpty)) {
         if (userNote != null && userNote.trim().isNotEmpty) {
           return await extractTicketFromText(
             text: userNote,
             apiKey: apiKey,
-            audioPath: resolvedPath,
+            audioPath: resolvedAudioPath,
+            imagePath: resolvedImagePath,
           );
         }
         return _fallbackAudioExtraction(
-          resolvedPath,
+          resolvedAudioPath,
+          imagePath: resolvedImagePath,
           userNote: userNote,
-          fallbackReason: 'Tệp âm thanh không khả dụng',
+          fallbackReason: 'Không tìm thấy dữ liệu tệp âm thanh hoặc hình ảnh',
         );
       }
 
@@ -194,21 +260,28 @@ class InspectionRemoteDataSourceImpl implements IInspectionRemoteDataSource {
 
       final List<Part> parts = [
         TextPart(
-          'Bạn là Chuyên gia AI Giám sát Hiện trường. Hãy lắng nghe kỹ âm thanh đính kèm, '
-          'bóc băng chính xác toàn bộ lời nói tiếng Việt và trích xuất thành đối tượng JSON theo schema quy định. '
+          'Bạn là Chuyên gia AI Giám sát Hiện trường. Hãy quan sát kỹ hình ảnh hiện trường đính kèm (nếu có) '
+          'và lắng nghe kỹ âm thanh đính kèm, bóc băng chính xác toàn bộ lời nói tiếng Việt và trích xuất thành đối tượng JSON theo schema quy định. '
+          'Đối chiếu hình ảnh để nhận diện loại máy móc, vết nứt gãy, rỉ sét, dầu loang, cháy xém hoặc biển số/mã hiệu thiết bị. '
           'Trường "title" phải tóm tắt đúng sự cố kỹ thuật trong bản ghi, '
           'trường "description" trình bày đầy đủ hiện trạng hư hỏng, '
           'trường "raw_transcript" là nguyên văn lời nói đã bóc băng.'
           '$noteSuffix',
         ),
-        DataPart(mimeType, audioBytes),
       ];
+
+      if (audioBytes != null && audioBytes.isNotEmpty) {
+        parts.add(DataPart(audioMime, audioBytes));
+      }
+      if (imageBytes != null && imageBytes.isNotEmpty) {
+        parts.add(DataPart(imageMime, imageBytes));
+      }
 
       // 4. Generate structured content
       final response = await model.generateContent([Content.multi(parts)]);
       final textResponse = response.text;
       if (textResponse == null || textResponse.trim().isEmpty) {
-        throw const AiExtractionException('Gemini không phản hồi kết quả âm thanh');
+        throw const AiExtractionException('Gemini không phản hồi kết quả Multimodal');
       }
 
       // 5. Clean & Validate JSON Output with InspectionTicketModel.fromJson()
@@ -218,32 +291,40 @@ class InspectionRemoteDataSourceImpl implements IInspectionRemoteDataSource {
       return InspectionTicketModel.fromJson(
         parsedJson,
         rawTranscript: parsedJson['raw_transcript'] as String? ?? userNote,
-        audioPath: resolvedPath,
+        audioPath: resolvedAudioPath.isNotEmpty ? resolvedAudioPath : null,
+        imagePath: resolvedImagePath.isNotEmpty ? resolvedImagePath : null,
       );
     } on io.SocketException catch (e) {
-      debugPrint('Mất kết nối mạng khi phân tích âm thanh: $e');
+      debugPrint('Mất kết nối mạng khi phân tích Multimodal: $e');
       return _fallbackAudioExtraction(
-        resolvedPath,
+        resolvedAudioPath,
+        imagePath: resolvedImagePath,
         userNote: userNote,
         fallbackReason: 'Mất kết nối Internet - Đã lưu xử lý ngoại tuyến',
       );
     } on TimeoutException catch (e) {
       debugPrint('Quá thời gian kết nối Gemini Multimodal: $e');
       return _fallbackAudioExtraction(
-        resolvedPath,
+        resolvedAudioPath,
+        imagePath: resolvedImagePath,
         userNote: userNote,
         fallbackReason: 'Quá thời gian phản hồi máy chủ AI',
       );
     } on FormatException catch (e) {
-      debugPrint('Lỗi sai cấu trúc JSON từ Gemini: $e');
+      debugPrint('Lỗi sai cấu trúc JSON từ Gemini Multimodal: $e');
       return _fallbackAudioExtraction(
-        resolvedPath,
+        resolvedAudioPath,
+        imagePath: resolvedImagePath,
         userNote: userNote,
         fallbackReason: 'Lỗi giải mã cấu trúc AI',
       );
     } catch (e) {
-      debugPrint('Lỗi xử lý âm thanh với Gemini Multimodal: $e');
-      return _fallbackAudioExtraction(resolvedPath, userNote: userNote);
+      debugPrint('Lỗi xử lý với Gemini Multimodal: $e');
+      return _fallbackAudioExtraction(
+        resolvedAudioPath,
+        imagePath: resolvedImagePath,
+        userNote: userNote,
+      );
     }
   }
 
@@ -285,6 +366,7 @@ class InspectionRemoteDataSourceImpl implements IInspectionRemoteDataSource {
   /// Safe audio fallback when offline, error occurs, or without Gemini API key
   InspectionTicketModel _fallbackAudioExtraction(
     String audioPath, {
+    String? imagePath,
     String? userNote,
     String? fallbackReason,
   }) {
@@ -292,6 +374,7 @@ class InspectionRemoteDataSourceImpl implements IInspectionRemoteDataSource {
       return _fallbackSmartExtraction(
         userNote,
         audioPath: audioPath,
+        imagePath: imagePath,
         fallbackReason: fallbackReason,
       );
     }
@@ -319,7 +402,8 @@ class InspectionRemoteDataSourceImpl implements IInspectionRemoteDataSource {
         'confidence_score': 0.85,
         'raw_transcript': 'Đã ghi âm giọng nói hiện trường ($fileName)',
       },
-      audioPath: audioPath,
+      audioPath: audioPath.isNotEmpty ? audioPath : null,
+      imagePath: imagePath,
     );
   }
 
@@ -327,6 +411,7 @@ class InspectionRemoteDataSourceImpl implements IInspectionRemoteDataSource {
   InspectionTicketModel _fallbackSmartExtraction(
     String text, {
     String? audioPath,
+    String? imagePath,
     String? fallbackReason,
   }) {
     final lower = text.toLowerCase();
@@ -517,6 +602,7 @@ class InspectionRemoteDataSourceImpl implements IInspectionRemoteDataSource {
         'raw_transcript': text,
       },
       audioPath: audioPath,
+      imagePath: imagePath,
       rawTranscript: text,
     );
   }

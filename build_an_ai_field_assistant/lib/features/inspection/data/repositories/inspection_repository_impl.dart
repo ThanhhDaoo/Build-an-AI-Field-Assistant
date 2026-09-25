@@ -41,13 +41,15 @@ class InspectionRepositoryImpl implements IInspectionRepository {
   Future<InspectionTicket> extractTicketFromVoice({
     required String audioPath,
     String? audioTranscript,
+    String? imagePath,
   }) async {
     final apiKey = await _getSavedApiKey();
 
-    // 1. If Gemini API key is available and audio exists, use Gemini Multimodal Audio analysis
-    if (apiKey != null && apiKey.trim().isNotEmpty && audioPath.isNotEmpty) {
-      return await remoteDataSource.extractTicketFromAudio(
+    // 1. If Gemini API key is available, use Gemini Multimodal (Audio + Image) analysis
+    if (apiKey != null && apiKey.trim().isNotEmpty && (audioPath.isNotEmpty || (imagePath != null && imagePath.isNotEmpty))) {
+      return await remoteDataSource.extractTicketMultimodal(
         audioPath: audioPath,
+        imagePath: imagePath,
         apiKey: apiKey,
         userNote: audioTranscript,
       );
@@ -55,12 +57,17 @@ class InspectionRepositoryImpl implements IInspectionRepository {
 
     // 2. If we have a transcribed text from device Speech-to-Text, extract ticket from text
     if (audioTranscript != null && audioTranscript.trim().isNotEmpty) {
-      return extractTicketFromText(audioTranscript, audioPath: audioPath);
+      return extractTicketFromText(
+        audioTranscript,
+        audioPath: audioPath,
+        imagePath: imagePath,
+      );
     }
 
     // 3. Fallback when offline / without Gemini API key and no words recognized
-    return await remoteDataSource.extractTicketFromAudio(
+    return await remoteDataSource.extractTicketMultimodal(
       audioPath: audioPath,
+      imagePath: imagePath,
       apiKey: apiKey,
       userNote: audioTranscript,
     );
@@ -70,14 +77,32 @@ class InspectionRepositoryImpl implements IInspectionRepository {
   Future<InspectionTicket> extractTicketFromText(
     String textNotes, {
     String? audioPath,
+    String? imagePath,
   }) async {
     final apiKey = await _getSavedApiKey();
     final model = await remoteDataSource.extractTicketFromText(
       text: textNotes,
       apiKey: apiKey,
       audioPath: audioPath,
+      imagePath: imagePath,
     );
     return model;
+  }
+
+  @override
+  Future<InspectionTicket> extractTicketMultimodal({
+    String? audioPath,
+    String? audioTranscript,
+    String? imagePath,
+    String? textNotes,
+  }) async {
+    final apiKey = await _getSavedApiKey();
+    return await remoteDataSource.extractTicketMultimodal(
+      audioPath: audioPath,
+      imagePath: imagePath,
+      apiKey: apiKey,
+      userNote: audioTranscript ?? textNotes,
+    );
   }
 
   @override

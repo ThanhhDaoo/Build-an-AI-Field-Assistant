@@ -58,6 +58,7 @@ class InspectionTicket {
   final double confidenceScore;
   final String? rawTranscript;
   final String? audioPath;
+  final String? imagePath; // Đường dẫn ảnh chụp hiện trường
   final String? equipmentId; // Mã thiết bị / phương tiện xe cơ giới
   final List<String> detectedIssues; // Danh sách các lỗi phát hiện dạng thẻ
   final List<InspectionPart> requiredParts; // Danh sách linh kiện kèm số lượng
@@ -77,6 +78,7 @@ class InspectionTicket {
     this.confidenceScore = 0.9,
     this.rawTranscript,
     this.audioPath,
+    this.imagePath,
     this.equipmentId,
     this.detectedIssues = const [],
     this.requiredParts = const [],
@@ -100,6 +102,7 @@ class InspectionTicket {
     double? confidenceScore,
     String? rawTranscript,
     String? audioPath,
+    String? imagePath,
     String? equipmentId,
     List<String>? detectedIssues,
     List<InspectionPart>? requiredParts,
@@ -119,6 +122,7 @@ class InspectionTicket {
       confidenceScore: confidenceScore ?? this.confidenceScore,
       rawTranscript: rawTranscript ?? this.rawTranscript,
       audioPath: audioPath ?? this.audioPath,
+      imagePath: imagePath ?? this.imagePath,
       equipmentId: equipmentId ?? this.equipmentId,
       detectedIssues: detectedIssues ?? this.detectedIssues,
       requiredParts: requiredParts ?? this.requiredParts,
@@ -136,9 +140,14 @@ class InspectionTicket {
           title == other.title &&
           status == other.status &&
           equipmentId == other.equipmentId &&
+          imagePath == other.imagePath &&
           updatedAt == other.updatedAt;
 
   @override
   int get hashCode =>
-      id.hashCode ^ status.hashCode ^ (equipmentId?.hashCode ?? 0) ^ updatedAt.hashCode;
+      id.hashCode ^
+      status.hashCode ^
+      (equipmentId?.hashCode ?? 0) ^
+      (imagePath?.hashCode ?? 0) ^
+      updatedAt.hashCode;
 }

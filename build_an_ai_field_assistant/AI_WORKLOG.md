@@ -21,6 +21,7 @@
 | **Giai đoạn 4** | **Màn hình Giao diện & Trải nghiệm Tương tác (VoiceCaptureScreen & TicketReviewScreen)** | **ĐÃ HOÀN THÀNH** | `b1c0fea`, `c10c630` |
 | **Giai đoạn 5** | **Xử lý Offline-First & Đồng bộ Dữ liệu (SQLite 'synced' / 'pending', Auto-sync ConnectivityService)** | **ĐÃ HOÀN THÀNH** | `88a55fc`, `68f56ec` |
 | **Giai đoạn 6** | **Đóng gói Sản phẩm & Tài liệu Bàn giao (Build Web Release, APK Release, README & AI_WORKLOG)** | **ĐÃ HOÀN THÀNH** | `fef17c3` |
+| **Giai đoạn 7** | **Bổ sung Chụp Ảnh Hiện Trường & Gemini 1.5 Flash Vision Multimodal (Image + Audio/Text)** | **ĐÃ HOÀN THÀNH** | `23021ae` |
 
 ---
 
@@ -203,6 +204,31 @@
   - Tuân thủ cấu trúc đề bài: **1. Vấn đề thực tiễn**, **2. Giải pháp công nghệ**, **3. Kiến trúc hệ thống**, **4. Hạn chế & Hướng phát triển**, **5. Hướng dẫn cài đặt & Đóng gói**, **6. Báo cáo chất lượng**.
 - **6.4. Hoàn thiện Tài liệu Chi tiết `AI_WORKLOG.md`**:
   - Tổng hợp toàn diện công cụ AI, prompt hữu ích, phân tích các pha AI hallucination/sinh sai code và chiến lược refactor chi tiết.
+
+---
+
+### [x] Giai Đoạn 7: Chụp Ảnh Hiện Trường & Gemini Vision Multimodal (Camera, Photo Review & Multimodal AI)
+- **7.1. Tích hợp Thư viện Camera & Khai báo Quyền Truy cập**:
+  - Bổ sung thư viện chính thức `image_picker: ^1.1.2` vào `pubspec.yaml`.
+  - Khai báo đầy đủ quyền hạn trong `AndroidManifest.xml` (`android.permission.CAMERA`, `android.permission.READ_MEDIA_IMAGES`, `android.permission.READ_EXTERNAL_STORAGE`) và `ios/Runner/Info.plist` (`NSCameraUsageDescription`, `NSPhotoLibraryUsageDescription`).
+- **7.2. Nâng cấp Tầng Domain & Data (Clean Architecture)**:
+  - Bổ sung trường `final String? imagePath;` vào Entity `InspectionTicket` và Data Model `InspectionTicketModel`.
+  - Cập nhật các hàm `copyWith`, `toMap`, `fromMap`, `toJson`, `fromJson`, `operator ==`, `hashCode`.
+- **7.3. Nâng cấp SQLite Database lên v3 (Auto-healing & Safe Migration)**:
+  - Tăng `kDatabaseVersion = 3` trong `AppConstants`.
+  - Thực thi migration `ALTER TABLE inspection_tickets ADD COLUMN image_path TEXT;` trong sự kiện `onUpgrade`.
+  - Cơ chế phòng thủ kép: Tự động chạy auto-healing `ALTER TABLE` khi mở database nếu phát hiện cột `image_path` bị thiếu trên thiết bị cũ.
+- **7.4. Nâng Cấp AI Engine (Gemini 1.5 Flash Vision Multimodal)**:
+  - Bổ sung phương thức `extractTicketMultimodal({List<int>? audioBytes, List<int>? imageBytes, String? promptText, String? imagePath})` trong `InspectionRemoteDataSource`.
+  - Nạp dữ liệu nhị phân ảnh dạng `DataPart('image/jpeg', imageBytes)` kết hợp song song với `audioBytes` (`DataPart('audio/mp4', ...)`) gửi cùng lúc tới Gemini 1.5 Flash.
+  - Cập nhật System Prompt (`assets/prompts/system_extraction_prompt.txt`) yêu cầu AI đọc nhãn máy, số seri, mã QR/vạch, tình trạng hư hỏng vật lý từ hình ảnh kết hợp âm thanh hiện trường.
+  - Tầng Fallback Heuristic NLP tự động bảo toàn `imagePath` ngay cả khi thiết bị mất mạng.
+- **7.5. Nâng Cấp Trải Nghiệm Giao Diện Người Dùng (Mobile UX)**:
+  - `VoiceCaptureScreen`: Thêm khu vực đính kèm ảnh trước khi ghi âm/gửi với 2 lựa chọn (Chụp Camera hoặc Chọn từ Thư viện), hiển thị ảnh preview bo tròn với hiệu ứng badge "Ảnh hiện trường", nút phóng to xem ảnh và nút xóa/chụp lại.
+  - `TicketReviewScreen`: Thêm card hiển thị ảnh bằng chứng kèm thumbnail, nút xem toàn màn hình (InteractiveViewer zoomable), nút Chụp lại / Thay ảnh hoặc Bổ sung ảnh nếu chưa có ảnh.
+- **7.6. Kiểm Thử Tự Động Toàn Diện**:
+  - Viết bộ test `test/phase_7_multimodal_image_test.dart` (4 bài kiểm thử mới bao phủ trọn vẹn luồng Domain, DTO, SQLite migration & Remote DataSource).
+  - Kết quả kiểm thử: **30/30 tests PASS 100%**, `flutter analyze` 0 cảnh báo.
 
 ---
 
@@ -409,9 +435,9 @@ flutter analyze
 ### 8.2. Kiểm Thử Đơn Vị Tự Động (Automated Unit Tests)
 ```bash
 flutter test
-# 00:01 +26: All tests passed!
+# 00:01 +30: All tests passed!
 ```
-- **Tổng số bài test**: 26/26 bài kiểm thử thành công (100% PASS).
+- **Tổng số bài test**: 30/30 bài kiểm thử thành công (100% PASS).
 
 ### 8.3. Kết Quả Đóng Gói Bản Web Release:
 ```bash
@@ -444,6 +470,7 @@ flutter build apk --release
 | `88a55fc` | **Giai đoạn 5** | `feat(phase-5): xu ly offline-first, luu tru sqlite synced / pending va auto-sync connectivity` |
 | `68f56ec` | **Worklog Sync** | `docs: cap nhat ma commit 88a55fc cho giai doan 5 trong AI_WORKLOG.md` |
 | `fef17c3` | **Giai đoạn 6** | `feat(phase-6): dong goi san pham build web release, apk release va hoan thien tai lieu README AI_WORKLOG` |
+| `23021ae` | **Giai đoạn 7** | `feat(camera): tich hop chup anh hien truong, Gemini 1.5 Flash Vision Multimodal va nang cap SQLite v3` |
 
 ---
 

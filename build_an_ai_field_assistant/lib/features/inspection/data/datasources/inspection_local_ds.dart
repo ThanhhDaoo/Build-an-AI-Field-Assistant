@@ -45,6 +45,7 @@ class InspectionLocalDataSourceImpl implements IInspectionLocalDataSource {
               confidence_score REAL,
               raw_transcript TEXT,
               audio_path TEXT,
+              image_path TEXT,
               equipment_id TEXT,
               detected_issues TEXT,
               required_parts TEXT,
@@ -63,6 +64,11 @@ class InspectionLocalDataSourceImpl implements IInspectionLocalDataSource {
             } catch (_) {}
             try {
               await db.execute('ALTER TABLE ${AppConstants.ticketsTable} ADD COLUMN required_parts TEXT');
+            } catch (_) {}
+          }
+          if (oldVersion < 3) {
+            try {
+              await db.execute('ALTER TABLE ${AppConstants.ticketsTable} ADD COLUMN image_path TEXT');
             } catch (_) {}
           }
         },
@@ -138,6 +144,9 @@ class InspectionLocalDataSourceImpl implements IInspectionLocalDataSource {
             } catch (_) {}
             try {
               await db.execute('ALTER TABLE ${AppConstants.ticketsTable} ADD COLUMN required_parts TEXT');
+            } catch (_) {}
+            try {
+              await db.execute('ALTER TABLE ${AppConstants.ticketsTable} ADD COLUMN image_path TEXT');
             } catch (_) {}
             await db.insert(
               AppConstants.ticketsTable,

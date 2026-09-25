@@ -82,6 +82,20 @@ class InspectionController extends ChangeNotifier {
     notifyListeners();
   }
 
+  // Attached Image Path for Visual Inspection
+  String? _selectedImagePath;
+  String? get selectedImagePath => _selectedImagePath;
+
+  void setSelectedImagePath(String? path) {
+    _selectedImagePath = path;
+    notifyListeners();
+  }
+
+  void clearSelectedImage() {
+    _selectedImagePath = null;
+    notifyListeners();
+  }
+
   InspectionController({
     required this.repository,
     required this.audioRecorderService,
@@ -186,12 +200,15 @@ class InspectionController extends ChangeNotifier {
       final extractedTicket = await repository.extractTicketFromVoice(
         audioPath: audioPath ?? '',
         audioTranscript: transcriptToUse,
+        imagePath: _selectedImagePath,
       );
 
-      _currentDraftTicket = extractedTicket;
+      _currentDraftTicket = (extractedTicket.imagePath == null && _selectedImagePath != null)
+          ? extractedTicket.copyWith(imagePath: _selectedImagePath)
+          : extractedTicket;
       _state = InspectionViewState.success;
       notifyListeners();
-      return extractedTicket;
+      return _currentDraftTicket;
     } catch (e) {
       _errorMessage = 'Không thể phân tích giọng nói: $e';
       _state = InspectionViewState.error;
@@ -214,17 +231,24 @@ class InspectionController extends ChangeNotifier {
   }
 
   /// Extract ticket directly from text prompt (e.g. manual entry or quick template)
-  Future<InspectionTicket?> extractFromText(String promptText) async {
+  Future<InspectionTicket?> extractFromText(String promptText, {String? imagePath}) async {
     _state = InspectionViewState.analyzing;
     _errorMessage = null;
     notifyListeners();
 
+    final imgPath = imagePath ?? _selectedImagePath;
+
     try {
-      final ticket = await repository.extractTicketFromText(promptText);
-      _currentDraftTicket = ticket;
+      final ticket = await repository.extractTicketFromText(
+        promptText,
+        imagePath: imgPath,
+      );
+      _currentDraftTicket = (ticket.imagePath == null && imgPath != null)
+          ? ticket.copyWith(imagePath: imgPath)
+          : ticket;
       _state = InspectionViewState.success;
       notifyListeners();
-      return ticket;
+      return _currentDraftTicket;
     } catch (e) {
       _errorMessage = 'Trích xuất thất bại: $e';
       _state = InspectionViewState.error;
@@ -246,6 +270,7 @@ class InspectionController extends ChangeNotifier {
     try {
       await repository.saveTicket(_currentDraftTicket!);
       _currentDraftTicket = null;
+      _selectedImagePath = null;
       _state = InspectionViewState.idle;
       await loadTickets();
       return true;

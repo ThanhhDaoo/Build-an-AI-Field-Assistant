@@ -220,20 +220,20 @@ flutter pub get
 
 ## 6. 🧪 Kiểm Thử & Đảm Bảo Chất Lượng Mã Nguồn (QA & Testing)
 
-Dự án áp dụng quy trình kiểm thử tự động toàn diện với **26 bài test đơn vị (Unit Tests)** bao phủ toàn bộ các tầng nghiệp vụ:
+Dự án áp dụng quy trình kiểm thử tự động toàn diện với **30 bài test đơn vị (Unit Tests)** bao phủ toàn bộ các tầng nghiệp vụ:
 
 ### Chạy Phân Tích Tĩnh Cú Pháp (Linter Analysis):
 ```bash
 flutter analyze
 # Analyzing build_an_ai_field_assistant...
-# No issues found! (ran in 1.7s)
+# No issues found! (ran in 1.6s)
 ```
 *(Kết quả: 0 lỗi, 0 cảnh báo, tuân thủ 100% chuẩn quy tắc flutter_lints)*
 
 ### Chạy Toàn Bộ Bộ Kiểm Thử Tự Động:
 ```bash
 flutter test
-# 00:01 +26: All tests passed! (26/26 PASS 100%)
+# 00:01 +30: All tests passed! (30/30 PASS 100%)
 ```
 
 ### Danh Mục Các Bộ Kiểm Thử:
@@ -243,6 +243,7 @@ flutter test
 4. `test/ai_extraction_service_test.dart`: Kiểm thử Gemini Multimodal JSON extraction, clean JSON regex, bẫy lỗi mất mạng, bẫy lỗi schema và Smart Heuristic NLP.
 5. `test/phase_4_interaction_test.dart`: Kiểm thử tương tác `InspectionPart`, bóc tách `equipmentId`, thẻ lỗi, danh mục vật tư (+/-), nút thu âm 88px và HUD timer.
 6. `test/phase_5_offline_sync_test.dart`: Kiểm thử lưu trữ SQLite `synced` vs `pending`, fallback khi server lỗi, và cơ chế tự động đồng bộ ngầm khi `ConnectivityService` phát hiện mạng phục hồi.
+7. `test/phase_7_multimodal_image_test.dart`: Kiểm thử Camera Image Picker, bảo toàn `imagePath`, serialization SQLite v3 và Gemini Multimodal Vision.
 
 ---
 

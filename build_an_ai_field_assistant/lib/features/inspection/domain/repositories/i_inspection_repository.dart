@@ -2,14 +2,27 @@ import '../entities/inspection_ticket.dart';
 
 /// Abstract Repository Interface defining inspection operations
 abstract class IInspectionRepository {
-  /// Extract structured ticket from voice audio recording or transcript
+  /// Extract structured ticket from voice audio recording or transcript with optional image
   Future<InspectionTicket> extractTicketFromVoice({
     required String audioPath,
     String? audioTranscript,
+    String? imagePath,
   });
 
-  /// Extract structured ticket from raw text notes or voice transcripts
-  Future<InspectionTicket> extractTicketFromText(String textNotes);
+  /// Extract structured ticket from raw text notes or voice transcripts with optional image
+  Future<InspectionTicket> extractTicketFromText(
+    String textNotes, {
+    String? audioPath,
+    String? imagePath,
+  });
+
+  /// Extract structured ticket multimodal (image, voice, notes)
+  Future<InspectionTicket> extractTicketMultimodal({
+    String? audioPath,
+    String? audioTranscript,
+    String? imagePath,
+    String? textNotes,
+  });
 
   /// Fetch all inspection tickets from local repository
   Future<List<InspectionTicket>> getTickets();

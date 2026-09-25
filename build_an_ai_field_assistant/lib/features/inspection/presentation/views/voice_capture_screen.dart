@@ -1,4 +1,7 @@
+import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/errors/exceptions.dart';
 import '../../../../core/utils/dialog_helper.dart';
@@ -49,10 +52,228 @@ class _VoiceCaptureScreenState extends State<VoiceCaptureScreen> {
     },
   ];
 
-  @override
-  void dispose() {
-    _quickNoteController.dispose();
-    super.dispose();
+  Future<void> _pickImage(ImageSource source) async {
+    try {
+      final picker = ImagePicker();
+      final pickedFile = await picker.pickImage(
+        source: source,
+        maxWidth: 1600,
+        maxHeight: 1600,
+        imageQuality: 85,
+      );
+      if (pickedFile != null) {
+        widget.controller.setSelectedImagePath(pickedFile.path);
+      }
+    } catch (e) {
+      debugPrint('Lỗi chụp/chọn ảnh: $e');
+      if (mounted) {
+        DialogHelper.showSnackBar(
+          context,
+          'Không thể tải ảnh: $e',
+          isError: true,
+        );
+      }
+    }
+  }
+
+  Widget _buildImageWidget(String path, {BoxFit fit = BoxFit.cover}) {
+    if (kIsWeb || path.startsWith('http')) {
+      return Image.network(
+        path,
+        fit: fit,
+        errorBuilder: (_, _, _) => const Center(
+          child: Icon(Icons.broken_image_rounded, color: AppColors.textMuted, size: 24),
+        ),
+      );
+    }
+    return Image.file(
+      File(path),
+      fit: fit,
+      errorBuilder: (_, _, _) => const Center(
+        child: Icon(Icons.broken_image_rounded, color: AppColors.textMuted, size: 24),
+      ),
+    );
+  }
+
+  void _showFullScreenImage(BuildContext context, String path) {
+    showDialog(
+      context: context,
+      builder: (ctx) => Dialog(
+        backgroundColor: Colors.black,
+        insetPadding: EdgeInsets.zero,
+        child: Stack(
+          children: [
+            Center(
+              child: InteractiveViewer(
+                panEnabled: true,
+                minScale: 0.8,
+                maxScale: 4.0,
+                child: _buildImageWidget(path, fit: BoxFit.contain),
+              ),
+            ),
+            Positioned(
+              top: 40,
+              right: 20,
+              child: IconButton(
+                icon: const Icon(Icons.close_rounded, color: Colors.white, size: 28),
+                onPressed: () => Navigator.of(ctx).pop(),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPhotoCaptureSection(InspectionController ctrl) {
+    final imagePath = ctrl.selectedImagePath;
+
+    if (imagePath != null && imagePath.isNotEmpty) {
+      return Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: AppColors.surface,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: AppColors.primary.withValues(alpha: 0.6), width: 1.5),
+        ),
+        child: Row(
+          children: [
+            // Image Thumbnail
+            GestureDetector(
+              onTap: () => _showFullScreenImage(context, imagePath),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(8),
+                child: SizedBox(
+                  width: 56,
+                  height: 56,
+                  child: Stack(
+                    fit: StackFit.expand,
+                    children: [
+                      _buildImageWidget(imagePath),
+                      Container(
+                        color: Colors.black.withValues(alpha: 0.25),
+                        child: const Icon(Icons.zoom_in_rounded, color: Colors.white70, size: 20),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: AppColors.primary.withValues(alpha: 0.15),
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: const Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.camera_alt_rounded, size: 11, color: AppColors.primary),
+                            SizedBox(width: 4),
+                            Text(
+                              'ĐÃ ĐÍNH KÈM ẢNH HIỆN TRƯỜNG',
+                              style: TextStyle(
+                                color: AppColors.primary,
+                                fontSize: 9.5,
+                                fontWeight: FontWeight.bold,
+                                letterSpacing: 0.5,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 4),
+                  const Text(
+                    'AI sẽ phân tích đồng thời ảnh chụp & giọng nói để lập biên bản',
+                    style: TextStyle(
+                      color: AppColors.textMuted,
+                      fontSize: 11,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            IconButton(
+              icon: const Icon(Icons.camera_alt_outlined, color: AppColors.textSecondary, size: 20),
+              tooltip: 'Chụp lại',
+              onPressed: () => _pickImage(ImageSource.camera),
+            ),
+            IconButton(
+              icon: const Icon(Icons.close_rounded, color: AppColors.priorityHigh, size: 20),
+              tooltip: 'Xóa ảnh',
+              onPressed: () => ctrl.clearSelectedImage(),
+            ),
+          ],
+        ),
+      );
+    }
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: AppColors.cardBorder),
+      ),
+      child: Row(
+        children: [
+          const Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Ảnh hiện trường (Tùy chọn)',
+                  style: TextStyle(
+                    color: AppColors.textPrimary,
+                    fontSize: 12.5,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                SizedBox(height: 2),
+                Text(
+                  'Chụp ảnh thiết bị trước khi nói để AI nhận diện tổn hại',
+                  style: TextStyle(color: AppColors.textMuted, fontSize: 10.5),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 8),
+          OutlinedButton.icon(
+            onPressed: () => _pickImage(ImageSource.camera),
+            style: OutlinedButton.styleFrom(
+              foregroundColor: AppColors.primary,
+              side: const BorderSide(color: AppColors.primary),
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+            ),
+            icon: const Icon(Icons.camera_alt_rounded, size: 15),
+            label: const Text('Chụp ảnh', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+          ),
+          const SizedBox(width: 6),
+          IconButton(
+            onPressed: () => _pickImage(ImageSource.gallery),
+            tooltip: 'Chọn ảnh từ thư viện',
+            style: IconButton.styleFrom(
+              backgroundColor: AppColors.background,
+              side: const BorderSide(color: AppColors.cardBorder),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+            ),
+            icon: const Icon(Icons.photo_library_outlined, size: 16, color: AppColors.textSecondary),
+          ),
+        ],
+      ),
+    );
   }
 
   Widget _buildSpeechChip(InspectionController ctrl, String text) {
@@ -296,7 +517,12 @@ class _VoiceCaptureScreenState extends State<VoiceCaptureScreen> {
                     ),
                   ),
 
-                  const SizedBox(height: 32),
+                  const SizedBox(height: 16),
+
+                  // Photo Capture & Preview Section
+                  _buildPhotoCaptureSection(ctrl),
+
+                  const SizedBox(height: 24),
 
                   // Center Wave Record Button
                   Center(
