@@ -57,16 +57,18 @@ build_an_ai_field_assistant/
 ├── assets/
 │   ├── icons/                                  # Biểu tượng ứng dụng
 │   └── prompts/
-│       └── system_extraction_prompt.txt        # System Instruction & JSON Schema cho Gemini
+│       └── system_extraction_prompt.txt        # System Instruction & JSON Schema cho Gemini Multimodal
 ├── lib/
 │   ├── app.dart                                # MaterialApp, Dark Theme, Routing
 │   ├── main.dart                               # Khởi tạo DI container, SQLite DB, Services
 │   │
 │   ├── core/                                   # Nền tảng hạ tầng dùng chung
-│   │   ├── constants/                          # Bảng màu (AppColors), API endpoints, SQLite constants
+│   │   ├── constants/                          # Bảng màu (AppColors), API endpoints, SQLite constants (v3)
 │   │   ├── errors/                             # Exception & Failure classes chuẩn hóa
 │   │   ├── network/                            # ApiClient wrapper
 │   │   ├── services/                           # AudioRecorder, AudioPlayer, SpeechToText, Connectivity
+│   │   │   ├── location_service.dart           # Dịch vụ định vị GPS 1-chạm & format tọa độ
+│   │   │   └── sync_notification_service.dart  # Dịch vụ phát thông báo đồng bộ ngầm
 │   │   ├── di/                                 # Dependency Injection Locator (GetIt)
 │   │   └── utils/                              # DateFormatter, Debouncer, DialogHelper
 │   │
@@ -74,71 +76,81 @@ build_an_ai_field_assistant/
 │       └── inspection/                         # Nghiệp vụ cốt lõi: Quản lý & Báo cáo Hiện trường
 │           ├── data/
 │           │   ├── datasources/
-│           │   │   ├── inspection_remote_ds.dart   # Gemini 1.5 Flash Multimodal + Multi-tier Fallback
-│           │   │   └── inspection_local_ds.dart    # SQLite DB v2 (Auto-healing) & SharedPreferences
+│           │   │   ├── inspection_remote_ds.dart   # Gemini 1.5 Flash Multimodal Vision + Multi-tier Fallback
+│           │   │   └── inspection_local_ds.dart    # SQLite DB v3 (Auto-healing) & SharedPreferences
 │           │   ├── models/
-│           │   │   └── inspection_ticket_model.dart # Serialization, DTO, InspectionPart mapping
+│           │   │   └── inspection_ticket_model.dart # Serialization, imagePath, InspectionPart mapping
 │           │   └── repositories/
 │           │       └── inspection_repository_impl.dart # Điều phối Online vs Offline & Auto-sync
 │           ├── domain/
 │           │   ├── entities/
-│           │   │   └── inspection_ticket.dart      # Business Entity thuần túy & InspectionPart
+│           │   │   └── inspection_ticket.dart      # Business Entity (imagePath, equipmentId, InspectionPart)
 │           │   └── repositories/
 │           │       └── i_inspection_repository.dart # Interface hợp đồng trừu tượng
 │           └── presentation/
 │               ├── controllers/
-│               │   └── inspection_controller.dart  # Quản lý trạng thái phiếu, ghi âm, lọc và đồng bộ
+│               │   └── inspection_controller.dart  # Quản lý trạng thái phiếu, ghi âm, GPS, lọc và đồng bộ
 │               ├── views/
 │               │   ├── main_shell_screen.dart      # Shell 3 phân hệ: Tổng quan, Thu âm, Biên bản
-│               │   ├── voice_capture_screen.dart   # Bàn điều khiển thu âm, Live STT, Preset chips
-│               │   ├── ticket_review_screen.dart   # Duyệt biên bản: Equipment ID, Issue cards, Parts +/-
+│               │   ├── voice_capture_screen.dart   # Chụp ảnh hiện trường, GPS 1-chạm, Nút Micro 88px
+│               │   ├── ticket_review_screen.dart   # Duyệt biên bản: Preview ảnh, GPS chip, Parts +/-
 │               │   └── ticket_history_screen.dart  # Quản lý danh sách (Tất cả, Chờ sync, Đã sync)
 │               └── widgets/
+│                   ├── in_app_sync_banner.dart     # Banner thông báo nổi phản hồi đồng bộ ngầm
 │                   ├── wave_record_button.dart     # Nút thu âm lớn 88px, sóng radar tỏa, HUD timer
 │                   ├── priority_badge_chip.dart    # Chip chọn 3 mức ưu tiên (Thấp, Trung bình, Khẩn cấp)
-│                   ├── permission_dialog.dart      # Dialog hướng dẫn cấp quyền Microphone
+│                   ├── permission_dialog.dart      # Dialog hướng dẫn cấp quyền Microphone / Camera
 │                   └── swipe_to_submit_btn.dart    # Nút trượt công nghiệp xác nhận gửi biên bản
 ```
 
-### Luồng Hoạt Động Dữ Liệu Hai Chiều (Offline-First Pipeline):
+### Luồng Hoạt Động Đa Phương Thức & Offline-First (Multimodal Vision Pipeline):
 ```mermaid
 sequenceDiagram
     autonumber
     actor Engineer as Kỹ sư Hiện trường
-    participant VoiceUI as VoiceCaptureScreen
-    participant STT as SpeechToTextService
-    participant AI as Gemini 1.5 Flash / Fallback
+    participant UI as VoiceCaptureScreen
+    participant Cam as Camera / ImagePicker
+    participant GPS as LocationService (GPS)
+    participant STT as AudioRecorder / SpeechToText
+    participant AI as Gemini 1.5 Flash Vision Multimodal
     participant Repo as InspectionRepository
-    participant DB as SQLite Local Database
+    participant DB as SQLite DB v3
     participant Conn as ConnectivityService
-    participant Cloud as Remote Backend API
+    participant Notif as InAppSyncBanner
 
-    Engineer->>VoiceUI: Bấm giữ / Nhấn nút Micro 88px
-    VoiceUI->>STT: Bắt đầu thu âm & bóc băng lời nói
-    STT-->>VoiceUI: Stream text lời nói thời gian thực
-    Engineer->>VoiceUI: Dừng thu âm
-    VoiceUI->>AI: Gửi file audio nhị phân (.m4a/.wav)
-    AI-->>VoiceUI: Trả về JSON bóc tách chuẩn hóa
-    VoiceUI->>Engineer: Hiển thị TicketReviewScreen (Mã thiết bị, Lỗi, Vật tư +/-)
-    Engineer->>VoiceUI: Vuốt thanh trượt Swipe-to-Submit
-    VoiceUI->>Repo: saveTicket(ticket)
-    alt Có kết nối Internet (Online)
-        Repo->>Cloud: syncTicketToRemote(ticket)
-        Cloud-->>Repo: Phản hồi 200 OK
-        Repo->>DB: saveTicket (status: 'synced')
-    else Ngoại tuyến hoặc Server lỗi (Offline)
-        Repo->>DB: saveTicket (status: 'pending')
-        Repo-->>VoiceUI: Thông báo "Đã lưu offline. Hệ thống tự đồng bộ khi có mạng"
+    Note over Engineer,UI: 1. Thu thập dữ liệu hiện trường (Chụp ảnh + Nói + GPS)
+    Engineer->>Cam: Chụp ảnh hiện trường thiết bị / hư hỏng
+    Cam-->>UI: imagePath (bằng chứng hình ảnh)
+    Engineer->>GPS: Chạm 1-chạm [📍 GPS]
+    GPS-->>UI: 10.7769° N, 106.7009° E (Vị trí GPS)
+    Engineer->>STT: Bấm nút Micro 88px nói mô tả sự cố
+    STT-->>UI: audioPath (.m4a) + Live transcript
+
+    Note over UI,AI: 2. Phân tích đa phương tiện (Multimodal AI)
+    UI->>AI: Gửi đồng thời DataPart(imageBytes) + DataPart(audioBytes)
+    AI-->>UI: Trả về JSON chuẩn (Mã thiết bị, Danh sách lỗi, Vật tư +/-, Mức ưu tiên)
+    UI->>Engineer: Mở TicketReviewScreen (Xem ảnh, GPS, vật tư)
+    Engineer->>UI: Vuốt thanh trượt Swipe-to-Submit xác nhận
+
+    Note over UI,DB: 3. Lưu trữ Offline-First SQLite v3
+    UI->>Repo: saveTicket(ticket)
+    alt Ngoại tuyến (Offline)
+        Repo->>DB: INSERT / UPDATE (status: 'pending')
+        Repo-->>UI: Lưu thành công, nhãn "☁ Chờ sync"
+    else Trực tuyến (Online)
+        Repo->>Repo: syncTicketToRemote(ticket)
+        Repo->>DB: INSERT / UPDATE (status: 'synced')
     end
-    Note over Conn,Repo: Khi kết nối 4G/Wifi được phục hồi
-    Conn->>Repo: onConnectivityChanged (isOnline: true)
-    Repo->>DB: getPendingTickets (WHERE status = 'pending')
-    loop Từng phiếu pending
-        Repo->>Cloud: syncTicketToRemote(ticket)
-        Cloud-->>Repo: 200 OK
+
+    Note over Conn,Notif: 4. Tự động đồng bộ ngầm khi phục hồi kết nối
+    Conn->>Repo: onConnectivityChanged(isOnline: true)
+    Repo->>DB: getPendingTickets()
+    loop Đồng bộ các phiếu pending
+        Repo->>Repo: syncTicketToRemote()
         Repo->>DB: markTicketAsSynced(id)
     end
-    Repo-->>VoiceUI: Tự động cập nhật nhãn "☁ Đã sync" trên giao diện
+    Repo->>Notif: notifySyncSuccess(count)
+    Notif-->>Engineer: "✓ Đã tự động đồng bộ thành công X phiếu kiểm tra lên máy chủ!"
 ```
 
 ---
@@ -152,12 +164,10 @@ sequenceDiagram
 2. **Kích thước tệp âm thanh**: File ghi âm nén AAC 128kbps `.m4a` tối ưu dung lượng nhỏ (~1MB/phút), tuy nhiên trong các ca kiểm tra kéo dài trên 10 phút cần cơ chế chunking file âm thanh thành các đoạn nhỏ.
 
 ### Hướng Phát Triển Tương Lai (Roadmap):
-- [ ] **Giai đoạn 6 (Mở rộng) - Camera Computer Vision Inspection**:
-  - Chụp ảnh vết nứt bê tông, mối hàn hoặc tia lửa điện; gửi trực tiếp ảnh lên Gemini 1.5 Flash Vision để đánh giá mức độ phá hủy cấu trúc vật lý.
-- [ ] **Xuất Báo Cáo PDF Tiêu Chuẩn Quốc Tế**:
-  - Xuất biên bản kiểm tra ra file PDF đính kèm chữ ký điện tử của kỹ sư trưởng, biểu đồ KPI và gửi trực tiếp qua Zalo/Email.
-- [ ] **Tích hợp Bản đồ GIS / GPS Hiện trường**:
-  - Tự động lấy tọa độ kinh độ/vĩ độ GPS của cột điện, van xả hoặc hố móng ngoài công trường gắn vào biên bản.
+- [x] **Camera & Gemini 1.5 Flash Vision Multimodal**: Chụp ảnh thiết bị hỏng, phân tích đồng thời hình ảnh + âm thanh lập biên bản.
+- [x] **Định vị GPS Hiện trường 1-chạm**: Lấy tọa độ kinh/vĩ độ chuẩn hóa thời gian thực bằng `geolocator`.
+- [x] **Thông Báo Phản Hồi Đồng Bộ Ngầm**: Widget `InAppSyncBanner` thông báo trực quan khi hoàn tất đồng bộ các phiếu chờ trong nền.
+- [ ] **Xuất Báo Cáo PDF Tiêu Chuẩn Quốc Tế**: Xuất biên bản kiểm tra ra file PDF đính kèm chữ ký điện tử của kỹ sư trưởng và gửi trực tiếp qua Zalo/Email.
 
 ---
 
@@ -252,7 +262,21 @@ flutter test
 
 ---
 
-## 7. 👥 Tác Giả & Bản Quyền
+## 7. 🎬 Kịch Bản Video Demo (< 5 Phút) Dành Cho Nhà Tuyển Dụng
+
+Kịch bản quay video giới thiệu sản phẩm hoàn chỉnh theo 5 phân cảnh quy chuẩn:
+
+| Thời Lượng | Phân Cảnh | Nội Dung Thuyết Minh & Thao Tác Chi Tiết |
+| :---: | :--- | :--- |
+| **0:00 - 0:45** | **1. Bối Cảnh & Bài Toán Thực Tiễn** | - **Mở đầu**: Mở màn hình chính *Field AI Assistant* (Industrial Dark Mode).<br>- **Vấn đề**: Kỹ sư mang găng tay bảo hộ dày, môi trường công xưởng ồn ào, sóng 4G/Wifi chập chờn, biểu mẫu giấy tờ dài dòng gây tốn 15-30 phút/phiếu.<br>- **Giải pháp**: Ứng dụng công nghệ AI Đa phương thức: **"Chụp ảnh → Nói → AI lập biên bản"** hoàn tất chỉ trong 10 giây. |
+| **0:45 - 2:00** | **2. Luồng Vàng Hiện Trường (Golden Flow)** | - **Hành động 1**: Bấm nút **[Chụp ảnh]** → Chụp nhãn thiết bị/sự cố rò rỉ van dầu.<br>- **Hành động 2**: Nhấn nút **Micro 88px**, nói: *"Máy bơm làm mát PUMP-02 tại Phân xưởng cán thép 2 bị nứt gioăng cao su, dầu áp lực rỉ mạnh, nhiệt độ tăng cao. Cần thay 2 gioăng chịu dầu M12 và siết lại mặt bích."*<br>- **Hiệu ứng**: Sóng radar âm thanh chuyển động, Live Speech-to-Text bóc băng trực tiếp.<br>- **Kết quả AI**: Gemini 1.5 Flash Vision Multimodal phân tích đồng thời ảnh + giọng nói, trả về biên bản đầy đủ: Mã `PUMP-02`, Phân loại `Cơ khí`, Ưu tiên `Khẩn cấp`, Danh sách lỗi và Vật tư cần thay. |
+| **2:00 - 3:00** | **3. Chỉnh Sửa Trực Quan, GPS & Swipe-To-Submit** | - **Định vị GPS**: Bấm nút chip **[📍 GPS 1-chạm]** → Tọa độ `10.7769° N, 106.7009° E (Vị trí GPS)` tự động điền vào phiếu.<br>- **Xem bằng chứng**: Chạm vào ảnh hiện trường để zoom phóng to kiểm tra vết nứt.<br>- **Tương tác vật tư**: Bấm `+` / `-` để điều chỉnh nhanh số lượng linh kiện gioăng chịu dầu.<br>- **Xác nhận**: Vuốt thanh trượt **Swipe-to-Submit** "Vuốt để duyệt & gửi biên bản >>" (tránh bấm nhầm khi đeo găng tay). |
+| **3:00 - 4:00** | **4. Xử Lý Ngoại Tuyến (Offline-First) & Tự Động Đồng Bộ** | - **Bật Chế độ máy bay (Airplane mode)** trên máy.<br>- Tạo một biên bản mới → Hệ thống lưu trữ vào SQLite v3 nội bộ với nhãn trạng thái **`☁ Chờ sync`** (màu cam).<br>- **Tắt Chế độ máy bay (Mở lại Wifi/4G)**.<br>- `ConnectivityService` phát hiện mạng phục hồi → Tự động đồng bộ ngầm lên máy chủ.<br>- **Phản hồi**: Banner xanh ngọc **`InAppSyncBanner`** trượt xuống: *"✓ Đã tự động đồng bộ thành công 1 phiếu kiểm tra lên máy chủ!"* và nhãn chuyển sang **`☁ Đã sync`** (màu xanh lá). |
+| **4:00 - 4:45** | **5. Kiến Trúc Mã Nguồn, Unit Tests & Bản Cài Đặt** | - **Kiến trúc**: Show cấu trúc Clean Architecture chuẩn hóa (Domain, Data, Presentation).<br>- **Đảm bảo chất lượng**: Mở terminal chạy `flutter test` (**35/35 tests PASS 100%**) và `flutter analyze` (**0 issues found**).<br>- **Thành phẩm**: Trình diễn file cài đặt độc lập `app-release.apk` (54.6MB) đã tối ưu Proguard, sẵn sàng cài đặt và chạy trên mọi thiết bị Android. |
+
+---
+
+## 8. 👥 Tác Giả & Bản Quyền
 - **Tác giả phát triển**: **Trần Thanh Đạo** ([@ThanhhDaoo](https://github.com/ThanhhDaoo))
 - Dự án: **Field AI Assistant — Trợ lý Giám sát & Báo cáo Hiện trường AI**
 - Repository: [https://github.com/ThanhhDaoo/Build-an-AI-Field-Assistant](https://github.com/ThanhhDaoo/Build-an-AI-Field-Assistant)
