@@ -158,6 +158,17 @@ class _MainShellScreenState extends State<MainShellScreen> {
     );
   }
 
+  void _openAdminDashboard() {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => AdminDashboardScreen(
+          controller: widget.controller,
+          onSwitchToFieldMode: () => Navigator.of(context).pop(),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return ListenableBuilder(
@@ -176,7 +187,7 @@ class _MainShellScreenState extends State<MainShellScreen> {
                     controller: ctrl,
                     onNavigateToRecord: () => setState(() => _currentIndex = 1),
                     onOpenSettings: _showSettingsModal,
-                    onNavigateToAdmin: () => setState(() => _currentIndex = 3),
+                    onNavigateToAdmin: _openAdminDashboard,
                   ),
                   VoiceCaptureScreen(
                     controller: ctrl,
@@ -185,10 +196,6 @@ class _MainShellScreenState extends State<MainShellScreen> {
                   TicketHistoryScreen(
                     controller: ctrl,
                     embeddedMode: true,
-                  ),
-                  AdminDashboardScreen(
-                    controller: ctrl,
-                    onSwitchToFieldMode: () => setState(() => _currentIndex = 0),
                   ),
                 ],
               ),
@@ -272,11 +279,6 @@ class _MainShellScreenState extends State<MainShellScreen> {
                   ),
                   activeIcon: const Icon(Icons.receipt_long_rounded),
                   label: 'Biên bản',
-                ),
-                const BottomNavigationBarItem(
-                  icon: Icon(Icons.admin_panel_settings_outlined),
-                  activeIcon: Icon(Icons.admin_panel_settings_rounded),
-                  label: 'Quản trị',
                 ),
               ],
             ),
@@ -519,11 +521,33 @@ class _DashboardTabViewState extends State<_DashboardTabView> {
                 ),
                 const SizedBox(width: 6),
 
-                // Admin dashboard button
-                IconButton(
-                  icon: const Icon(Icons.admin_panel_settings_rounded, color: AppColors.primary, size: 22),
-                  onPressed: widget.onNavigateToAdmin,
-                  tooltip: 'Trung tâm Quản trị & Điều độ',
+                // Role switch: Quản đốc button
+                InkWell(
+                  onTap: widget.onNavigateToAdmin,
+                  borderRadius: BorderRadius.circular(8),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: AppColors.primary.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: AppColors.primary.withValues(alpha: 0.3), width: 1),
+                    ),
+                    child: const Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.shield_outlined, size: 14, color: AppColors.primary),
+                        SizedBox(width: 5),
+                        Text(
+                          'Quản đốc',
+                          style: TextStyle(
+                            color: AppColors.primary,
+                            fontSize: 11.5,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
                 ),
 
                 // Settings icon button

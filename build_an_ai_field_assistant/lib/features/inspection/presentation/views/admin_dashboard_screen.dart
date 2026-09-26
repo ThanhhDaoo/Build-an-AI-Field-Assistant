@@ -490,6 +490,18 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
           Row(
             mainAxisSize: MainAxisSize.min,
             children: [
+              IconButton(
+                icon: const Icon(Icons.arrow_back_rounded, color: AppColors.textSecondary, size: 20),
+                tooltip: 'Trở về Chế độ Kỹ sư Hiện trường',
+                onPressed: () {
+                  if (widget.onSwitchToFieldMode != null) {
+                    widget.onSwitchToFieldMode!();
+                  } else {
+                    Navigator.of(context).maybePop();
+                  }
+                },
+              ),
+              const SizedBox(width: 4),
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
