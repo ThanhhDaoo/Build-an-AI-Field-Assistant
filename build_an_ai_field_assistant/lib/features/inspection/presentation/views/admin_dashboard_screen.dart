@@ -734,8 +734,11 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
   }
 
   Widget _buildFilterBar() {
+    final hasActiveFilter = _searchQuery.isNotEmpty ||
+        _selectedPriorityFilter != 'all' ||
+        _selectedStatusFilter != 'all';
+
     return Container(
-      padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: AppColors.surface,
         borderRadius: BorderRadius.circular(12),
@@ -744,102 +747,215 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Search Input
-          TextField(
-            controller: _searchController,
-            onChanged: (val) => setState(() => _searchQuery = val.trim()),
-            style: const TextStyle(color: AppColors.textPrimary, fontSize: 13),
-            decoration: InputDecoration(
-              hintText: 'Tìm kiếm theo mã sự cố, thiết bị, khu vực hoặc kỹ sư...',
-              hintStyle: const TextStyle(color: AppColors.textMuted, fontSize: 12),
-              prefixIcon: const Icon(Icons.search_rounded, color: AppColors.textMuted, size: 18),
-              suffixIcon: _searchQuery.isNotEmpty
-                  ? IconButton(
-                      icon: const Icon(Icons.clear_rounded, size: 16, color: AppColors.textMuted),
-                      onPressed: () {
-                        _searchController.clear();
-                        setState(() => _searchQuery = '');
-                      },
-                    )
-                  : null,
-              filled: true,
-              fillColor: AppColors.background,
-              contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(8),
-                borderSide: const BorderSide(color: AppColors.cardBorder),
-              ),
-              enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(8),
-                borderSide: const BorderSide(color: AppColors.cardBorder),
-              ),
+          // 1. Ô tìm kiếm thông minh kết hợp nút Đặt lại
+          Padding(
+            padding: const EdgeInsets.fromLTRB(12, 12, 12, 10),
+            child: Row(
+              children: [
+                Expanded(
+                  child: TextField(
+                    controller: _searchController,
+                    onChanged: (val) => setState(() => _searchQuery = val.trim()),
+                    style: const TextStyle(color: AppColors.textPrimary, fontSize: 13),
+                    decoration: InputDecoration(
+                      hintText: 'Tìm kiếm theo mã sự cố, thiết bị, khu vực...',
+                      hintStyle: const TextStyle(color: AppColors.textMuted, fontSize: 12),
+                      prefixIcon: const Icon(Icons.search_rounded, color: AppColors.textMuted, size: 18),
+                      suffixIcon: _searchQuery.isNotEmpty
+                          ? IconButton(
+                              icon: const Icon(Icons.clear_rounded, size: 16, color: AppColors.textMuted),
+                              onPressed: () {
+                                _searchController.clear();
+                                setState(() => _searchQuery = '');
+                              },
+                            )
+                          : null,
+                      filled: true,
+                      fillColor: AppColors.background,
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8),
+                        borderSide: const BorderSide(color: AppColors.cardBorder),
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8),
+                        borderSide: const BorderSide(color: AppColors.cardBorder),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8),
+                        borderSide: const BorderSide(color: AppColors.primary),
+                      ),
+                    ),
+                  ),
+                ),
+                if (hasActiveFilter) ...[
+                  const SizedBox(width: 8),
+                  TextButton.icon(
+                    onPressed: () {
+                      _searchController.clear();
+                      setState(() {
+                        _searchQuery = '';
+                        _selectedPriorityFilter = 'all';
+                        _selectedStatusFilter = 'all';
+                      });
+                    },
+                    icon: const Icon(Icons.restart_alt_rounded, size: 15),
+                    label: const Text('Đặt lại', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600)),
+                    style: TextButton.styleFrom(
+                      foregroundColor: AppColors.textSecondary,
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                    ),
+                  ),
+                ],
+              ],
             ),
           ),
-          const SizedBox(height: 10),
 
-          // Priority and Status Filter Chips
-          Wrap(
-            spacing: 6,
-            runSpacing: 6,
-            crossAxisAlignment: WrapCrossAlignment.center,
-            children: [
-              const Text('Mức độ:', style: TextStyle(color: AppColors.textMuted, fontSize: 11)),
-              _buildFilterChip('Tất cả', 'all', _selectedPriorityFilter, (val) {
-                setState(() => _selectedPriorityFilter = val);
-              }),
-              _buildFilterChip('Khẩn cấp', 'critical', _selectedPriorityFilter, (val) {
-                setState(() => _selectedPriorityFilter = val);
-              }),
-              _buildFilterChip('Cao', 'high', _selectedPriorityFilter, (val) {
-                setState(() => _selectedPriorityFilter = val);
-              }),
-              _buildFilterChip('Trung bình', 'medium', _selectedPriorityFilter, (val) {
-                setState(() => _selectedPriorityFilter = val);
-              }),
-              const SizedBox(width: 8),
-              const Text('Trạng thái:', style: TextStyle(color: AppColors.textMuted, fontSize: 11)),
-              _buildFilterChip('Tất cả', 'all', _selectedStatusFilter, (val) {
-                setState(() => _selectedStatusFilter = val);
-              }),
-              _buildFilterChip('Chờ duyệt', 'pending_review', _selectedStatusFilter, (val) {
-                setState(() => _selectedStatusFilter = val);
-              }),
-              _buildFilterChip('Đang sửa', 'in_progress', _selectedStatusFilter, (val) {
-                setState(() => _selectedStatusFilter = val);
-              }),
-              _buildFilterChip('Đã xong', 'resolved', _selectedStatusFilter, (val) {
-                setState(() => _selectedStatusFilter = val);
-              }),
-            ],
+          const Divider(height: 1, color: AppColors.cardBorder),
+
+          // 2. Hàng 1: Mức độ ưu tiên
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            child: Row(
+              children: [
+                const SizedBox(
+                  width: 76,
+                  child: Text(
+                    'Mức độ:',
+                    style: TextStyle(
+                      color: AppColors.textSecondary,
+                      fontSize: 11.5,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+                Expanded(
+                  child: SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: Row(
+                      children: [
+                        _buildFilterPill('Tất cả', 'all', _selectedPriorityFilter, (val) {
+                          setState(() => _selectedPriorityFilter = val);
+                        }),
+                        const SizedBox(width: 6),
+                        _buildFilterPill('Khẩn cấp', 'critical', _selectedPriorityFilter, (val) {
+                          setState(() => _selectedPriorityFilter = val);
+                        }, activeColor: AppColors.error),
+                        const SizedBox(width: 6),
+                        _buildFilterPill('Cao', 'high', _selectedPriorityFilter, (val) {
+                          setState(() => _selectedPriorityFilter = val);
+                        }, activeColor: AppColors.priorityHigh),
+                        const SizedBox(width: 6),
+                        _buildFilterPill('Trung bình', 'medium', _selectedPriorityFilter, (val) {
+                          setState(() => _selectedPriorityFilter = val);
+                        }, activeColor: AppColors.priorityMedium),
+                        const SizedBox(width: 6),
+                        _buildFilterPill('Thấp', 'low', _selectedPriorityFilter, (val) {
+                          setState(() => _selectedPriorityFilter = val);
+                        }, activeColor: AppColors.priorityLow),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          const Divider(height: 1, color: AppColors.cardBorder),
+
+          // 3. Hàng 2: Trạng thái điều độ
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            child: Row(
+              children: [
+                const SizedBox(
+                  width: 76,
+                  child: Text(
+                    'Trạng thái:',
+                    style: TextStyle(
+                      color: AppColors.textSecondary,
+                      fontSize: 11.5,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+                Expanded(
+                  child: SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: Row(
+                      children: [
+                        _buildFilterPill('Tất cả', 'all', _selectedStatusFilter, (val) {
+                          setState(() => _selectedStatusFilter = val);
+                        }),
+                        const SizedBox(width: 6),
+                        _buildFilterPill('Chờ tiếp nhận', 'pending_review', _selectedStatusFilter, (val) {
+                          setState(() => _selectedStatusFilter = val);
+                        }, activeColor: const Color(0xFFD97706)),
+                        const SizedBox(width: 6),
+                        _buildFilterPill('Đang xử lý', 'in_progress', _selectedStatusFilter, (val) {
+                          setState(() => _selectedStatusFilter = val);
+                        }, activeColor: const Color(0xFF2563EB)),
+                        const SizedBox(width: 6),
+                        _buildFilterPill('Đã khắc phục', 'resolved', _selectedStatusFilter, (val) {
+                          setState(() => _selectedStatusFilter = val);
+                        }, activeColor: AppColors.primary),
+                        const SizedBox(width: 6),
+                        _buildFilterPill('Đã nghiệm thu', 'closed', _selectedStatusFilter, (val) {
+                          setState(() => _selectedStatusFilter = val);
+                        }, activeColor: const Color(0xFF475569)),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildFilterChip(
+  Widget _buildFilterPill(
     String label,
     String value,
     String currentValue,
-    ValueChanged<String> onSelected,
-  ) {
+    ValueChanged<String> onSelected, {
+    Color? activeColor,
+  }) {
     final isSelected = value == currentValue;
-    return FilterChip(
-      label: Text(label),
-      selected: isSelected,
-      onSelected: (_) => onSelected(value),
-      backgroundColor: AppColors.background,
-      selectedColor: AppColors.primary.withValues(alpha: 0.2),
-      checkmarkColor: AppColors.primary,
-      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 0),
-      labelStyle: TextStyle(
-        fontSize: 11,
-        color: isSelected ? AppColors.primary : AppColors.textSecondary,
-        fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-      ),
-      side: BorderSide(
-        color: isSelected ? AppColors.primary : AppColors.cardBorder,
-        width: 1,
+    final color = activeColor ?? AppColors.primary;
+
+    return InkWell(
+      onTap: () => onSelected(value),
+      borderRadius: BorderRadius.circular(6),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 150),
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+        decoration: BoxDecoration(
+          color: isSelected ? color.withValues(alpha: 0.12) : AppColors.background,
+          borderRadius: BorderRadius.circular(6),
+          border: Border.all(
+            color: isSelected ? color : AppColors.cardBorder,
+            width: isSelected ? 1.2 : 1,
+          ),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (isSelected) ...[
+              Icon(Icons.check_rounded, size: 12, color: color),
+              const SizedBox(width: 4),
+            ],
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 11.5,
+                fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+                color: isSelected ? color : AppColors.textSecondary,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
