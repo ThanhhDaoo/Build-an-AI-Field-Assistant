@@ -262,11 +262,11 @@ flutter test
 
 ---
 
-## 7. 🎬 Kịch Bản Video Demo (< 5 Phút) Dành Cho Nhà Tuyển Dụng
+## 7. 🧭 Quy Trình Trải Nghiệm & Trình Diễn Tính Năng (Demonstration Walkthrough)
 
-Kịch bản quay video giới thiệu sản phẩm hoàn chỉnh theo 5 phân cảnh quy chuẩn:
+Hướng dẫn các bước trải nghiệm thực tế các tính năng cốt lõi của Field AI Assistant:
 
-| Thời Lượng | Phân Cảnh | Nội Dung Thuyết Minh & Thao Tác Chi Tiết |
+| Bước | Tính Năng Trọng Tâm | Mô Tả Thao Tác & Trải Nghiệm Chi Tiết |
 | :---: | :--- | :--- |
 | **0:00 - 0:45** | **1. Bối Cảnh & Bài Toán Thực Tiễn** | - **Mở đầu**: Mở màn hình chính *Field AI Assistant* (Industrial Dark Mode).<br>- **Vấn đề**: Kỹ sư mang găng tay bảo hộ dày, môi trường công xưởng ồn ào, sóng 4G/Wifi chập chờn, biểu mẫu giấy tờ dài dòng gây tốn 15-30 phút/phiếu.<br>- **Giải pháp**: Ứng dụng công nghệ AI Đa phương thức: **"Chụp ảnh → Nói → AI lập biên bản"** hoàn tất chỉ trong 10 giây. |
 | **0:45 - 2:00** | **2. Luồng Vàng Hiện Trường (Golden Flow)** | - **Hành động 1**: Bấm nút **[Chụp ảnh]** → Chụp nhãn thiết bị/sự cố rò rỉ van dầu.<br>- **Hành động 2**: Nhấn nút **Micro 88px**, nói: *"Máy bơm làm mát PUMP-02 tại Phân xưởng cán thép 2 bị nứt gioăng cao su, dầu áp lực rỉ mạnh, nhiệt độ tăng cao. Cần thay 2 gioăng chịu dầu M12 và siết lại mặt bích."*<br>- **Hiệu ứng**: Sóng radar âm thanh chuyển động, Live Speech-to-Text bóc băng trực tiếp.<br>- **Kết quả AI**: Gemini 1.5 Flash Vision Multimodal phân tích đồng thời ảnh + giọng nói, trả về biên bản đầy đủ: Mã `PUMP-02`, Phân loại `Cơ khí`, Ưu tiên `Khẩn cấp`, Danh sách lỗi và Vật tư cần thay. |

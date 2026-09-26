@@ -24,7 +24,7 @@
 | **Giai đoạn 7** | **Bổ sung Chụp Ảnh Hiện Trường & Gemini 1.5 Flash Vision Multimodal (Image + Audio/Text)** | **ĐÃ HOÀN THÀNH** | `b0daac0` |
 | **Giai đoạn 8** | **Bổ sung Điểm Thưởng: Định Vị GPS 1-Chạm & Thông Báo Phản Hồi Đồng Bộ Ngầm** | **ĐÃ HOÀN THÀNH** | `74e89a1` |
 | **Giai đoạn 9** | **Đóng Gói Bản Phát Hành Release Độc Lập (Android APK 54.6MB & Web SPA 23.4s)** | **ĐÃ HOÀN THÀNH** | `13a12d6` |
-| **Giai đoạn 10** | **Hồ Sơ Bàn Giao Kỹ Thuật Toàn Diện & Kịch Bản Video Giới Thiệu 5 Phân Cảnh (< 5 Phút)** | **ĐÃ HOÀN THÀNH** | `HEAD` |
+| **Giai đoạn 10** | **Hoàn Thiện Hồ Sơ Kỹ Thuật, Quy Trình Vận Hành & Bàn Giao Hệ Thống** | **ĐÃ HOÀN THÀNH** | `HEAD` |
 
 ---
 
@@ -278,22 +278,16 @@
 
 ---
 
-### [x] Giai Đoạn 10: Hồ Sơ Bàn Giao Kỹ Thuật Toàn Diện & Kịch Bản Video Demo 5 Phân Cảnh (< 5 Phút)
+### [x] Giai Đoạn 10: Hoàn Thiện Hồ Sơ Kỹ Thuật, Quy Trình Vận Hành & Bàn Giao Hệ Thống
 - **10.1. Cập Nhật Hồ Sơ Kỹ Thuật `README.md`**:
   - Bổ sung **Sơ đồ Kiến trúc Multimodal Vision & Audio** chi tiết.
   - Bổ sung **Quy trình tác nghiệp chuẩn**: "Chụp ảnh hiện trường → Ghi âm giọng nói → Gemini Vision bóc tách JSON → Duyệt & Swipe-to-Submit".
   - Bổ sung thông số kỹ thuật tính năng **Định vị GPS 1-chạm** (`geolocator: ^13.0.1`) và **Thông báo đồng bộ ngầm** (`InAppSyncBanner`).
-  - Bổ sung bảng đối chiếu kiểm thử 35 Unit Tests tự động.
-- **10.2. Biên Soạn Kịch Bản Video Giới Thiệu & Trình Diễn Sản Phẩm (< 5 Phút)**:
-  - Cấu trúc kịch bản được phân bổ chặt chẽ thành **5 phân cảnh chính**, tập trung làm nổi bật bài toán thực tiễn của kỹ sư hiện trường:
-
-| Phân Cảnh | Mốc Thời Gian | Tiêu Đề Phân Cảnh | Thao Tác Màn Hình (Visual Actions) | Lời Thoại Thuyết Minh (Voiceover / Script) |
-| :---: | :---: | :--- | :--- | :--- |
-| **Phân cảnh 1** | **0:00 - 0:45** | **Bối cảnh & Nỗi đau Hiện trường (Context & Engineering Pain Points)** | Mở ứng dụng `Field AI Assistant` trên điện thoại/emulator. Lướt qua màn hình Dashboard Dark Mode cao cấp. Đưa hình ảnh/video kỹ sư đeo găng tay dày, công trường ồn ào. | *"Xin chào quý ban giám khảo và anh chị tuyển dụng! Tại các công trường xây dựng, xưởng sản xuất hay nhà máy năng lượng, kỹ sư giám sát phải mang găng tay bảo hộ dày, môi trường thì nhiều tiếng ồn máy móc và đặc biệt là sóng 4G/Wifi chập chờn. Việc phải dừng tay nhập liệu hàng chục ô biểu mẫu dài dòng trên điện thoại là một cực hình gây chậm trễ tiến độ. Hôm nay, em xin giới thiệu **Field AI Assistant** — Trợ lý AI hiện trường với triết lý tối giản: **Chụp ảnh → Bấm nói → Để AI tự động tạo biên bản kỹ thuật**."* |
-| **Phân cảnh 2** | **0:45 - 2:00** | **Luồng Vàng Hiện Trường: Chụp Ảnh → Nói → Gemini Vision Bóc Tách (The Golden Flow)** | 1. Bấm tab **Thu âm**.<br>2. Bấm nút **[📷 Chụp ảnh]**, chọn ảnh máy bơm/tủ điện hỏng.<br>3. Bấm giữ nút tròn lớn 88px, sóng radar đỏ lan tỏa, đồng hồ đếm `00:08`.<br>4. Nói to: *"Kiểm tra bơm thủy lực PUMP-01 tại xưởng số 3, phát hiện rỉ dầu van xả và bạc đạn kêu to, mức độ khẩn cấp, cần thay gioăng cao su DN50 và 2 vòng bi SKF"*. Text STT nhảy trực tiếp.<br>5. Bấm dừng, màn hình xoay vòng phân tích Gemini 1.5 Flash Vision Multimodal. | *"Tại hiện trường, kỹ sư chỉ mất đúng 10 giây: Chạm chụp bức ảnh thiết bị hư hỏng, sau đó bấm nút micro lớn và nói mô tả sự cố bằng ngôn ngữ tự nhiên. Bộ nhận dạng giọng nói bóc băng tiếng Việt trực tiếp ngay trên màn hình. Ngay sau đó, tệp âm thanh và hình ảnh nhị phân được truyền đồng thời tới **Gemini 1.5 Flash Vision Multimodal**. AI sẽ phân tích song song hình ảnh vết nứt, nhãn mác máy và giọng nói để bóc tách ra một biên bản hoàn chỉnh: Mã thiết bị PUMP-01, Phân loại Cơ khí, Độ ưu tiên Khẩn cấp, Danh sách lỗi và Danh mục vật tư cần thay thế."* |
-| **Phân cảnh 3** | **2:00 - 3:00** | **Chỉnh Sửa Nhanh & Định Vị GPS 1-Chạm (Review, GPS & Industrial Swipe)** | 1. Màn hình tự động chuyển sang `TicketReviewScreen`.<br>2. Xem ảnh bằng chứng thu nhỏ, bấm xem phóng to.<br>3. Bấm nút chip **[📍 GPS 1-chạm]**: Tọa độ GPS `10.7769° N, 106.7009° E` tự động điền vào vị trí.<br>4. Đổi mức ưu tiên từ Cam sang Đỏ.<br>5. Bấm `+` tăng số lượng vòng bi từ 2 lên 3.<br>6. Đặt ngón tay vuốt nút trượt **Swipe to Submit >>** màu ngọc lục bảo. | *"Toàn bộ thông tin được đưa vào màn hình duyệt phiếu chuyên nghiệp. Kỹ sư có thể phóng to ảnh kiểm tra vết nứt. Đặc biệt với tính năng **GPS 1-chạm**, chỉ cần một click là hệ thống tự lấy tọa độ kinh độ - vĩ độ thực tế mà không cần gõ bàn phím. Mọi linh kiện đều có nút bấm tăng giảm `+ / -` thân thiện khi mang găng tay. Cuối cùng, thay vì nút bấm dễ chạm nhầm, em đã thiết kế thanh trượt **Swipe-to-Submit** chuẩn công nghiệp: vuốt dứt khoát sang phải để xác nhận phê duyệt biên bản!"* |
-| **Phân cảnh 4** | **3:00 - 4:00** | **Xử Lý Ngoại Tuyến & Tự Động Đồng Bộ Ngầm (Offline-First Architecture & Sync Notification)** | 1. Kéo thanh thông báo Android xuống, bật chế độ **Airplane Mode** (Ngắt toàn bộ mạng).<br>2. Banner vàng xuất hiện: *"Đang ngoại tuyến. Dữ liệu lưu cục bộ và sẽ tự sync khi có mạng"*. Tạo một phiếu sự cố mới và vuốt gửi.<br>3. Vào tab **Biên bản**: Phiếu mới có nhãn vàng **☁ Chờ sync**.<br>4. Tắt Airplane Mode (Mạng phục hồi).<br>5. Quan sát: `ConnectivityService` phát hiện mạng -> Kích hoạt sync ngầm -> Banner xanh ngọc `InAppSyncBanner` trượt xuống thông báo: *"✓ Đã tự động đồng bộ thành công 1 phiếu kiểm tra lên máy chủ!"* -> Nhãn phiếu lập tức đổi sang **☁ Đã sync**. | *"Ngoài công trường sâu trong hầm lò hay vùng mất sóng là chuyện bình thường. Bây giờ em sẽ bật chế độ Máy bay (Airplane Mode). Ứng dụng ngay lập tức cảnh báo trạng thái Offline. Kỹ sư vẫn chụp ảnh, nói và tạo phiếu bình thường. Phiếu được mã hóa lưu trữ an toàn trong SQLite cục bộ với trạng thái 'pending' kèm nhãn đám mây **☁ Chờ sync**. Ngay khi kỹ sư bước ra khỏi khu vực khuất sóng và tắt chế độ máy bay, dịch vụ mạng sẽ tự động phát hiện, kích hoạt luồng đồng bộ ngầm và đẩy toàn bộ phiếu lên máy chủ. Một banner xanh thông báo hoàn tất trượt xuống và trạng thái lập tức chuyển thành **☁ Đã sync** mà không cần người dùng phải bấm thêm bất kỳ nút nào!"* |
-| **Phân cảnh 5** | **4:00 - 4:45** | **Kiến Trúc Kỹ Thuật, Đóng Gói Thành Phẩm & Kết Thúc (Clean Architecture, Tests & APK)** | 1. Chuyển sang màn hình VS Code / IDE: Show cấu trúc thư mục Clean Architecture (`domain`, `data`, `presentation`, `core`).<br>2. Mở terminal gõ: `flutter test` → 35/35 Unit tests PASS 100%.<br>3. Mở terminal gõ: `flutter analyze` → No issues found (0 warnings).<br>4. Show file thành phẩm `build/app/outputs/flutter-apk/app-release.apk` (54.6MB) và link Web Demo.<br>5. Lời cảm ơn và thông tin liên hệ. | *"Về mặt kiến trúc, dự án được xây dựng 100% theo tiêu chuẩn **Clean Architecture** kết hợp Service Locator GetIt và Dependency Injection. Ứng dụng sở hữu bộ lọc lỗi đa tầng (Multi-tier Fallback Engine) và cơ chế tự vá cơ sở dữ liệu (Auto-healing SQLite) ngăn chặn triệt để mọi nguy cơ crash ứng dụng. Toàn bộ mã nguồn đã vượt qua **35 bài kiểm thử đơn vị tự động (Unit Tests) với tỷ lệ đỗ 100%** và **0 lỗi static analysis**. Bản phát hành **app-release.apk** độc lập 54.6MB đã sẵn sàng để quý ban giám khảo cài đặt ngay trên thiết bị thực tế. Em xin chân thành cảm ơn quý ban giám khảo đã theo dõi!"* |
+  - Bổ sung bảng đối chiếu kiểm thử tự động toàn diện.
+- **10.2. Quy Trình Vận Hành & Bàn Giao Kỹ Thuật (Handoff & Operations Guide)**:
+  - Xây dựng tài liệu hướng dẫn vận hành hệ thống, quản trị phân quyền kỹ thuật viên và kiểm soát dữ liệu biên bản.
+  - Chuẩn hóa quy trình cấu hình biến môi trường `GEMINI_API_KEY`, hướng dẫn khởi chạy đa nền tảng (Web/Android/macOS).
+  - Hoàn thiện quy trình kiểm chứng cơ chế ngoại tuyến (Offline-First), tự động đồng bộ ngầm và xuất dữ liệu báo cáo kỹ thuật.
 
 ---
 
@@ -543,7 +537,7 @@ flutter build apk --release
 | `b0daac0` | **Giai đoạn 7** | `feat(camera): tich hop chup anh hien truong, Gemini 1.5 Flash Vision Multimodal va SQLite v3` |
 | `74e89a1` | **Giai đoạn 8** | `feat(gps-sync): tich hop 1-cham GPS geolocator, InAppSyncBanner va SyncNotificationService` |
 | `13a12d6` | **Giai đoạn 9** | `docs(release): cap nhat thong so build ban APK release 54.6MB va Web release 23.4s` |
-| `HEAD` | **Giai đoạn 10** | `docs: hoan thien ho so ban giao README, AI_WORKLOG va kich ban video demo 5 phan canh` |
+| `HEAD` | **Giai đoạn 10** | `docs: hoan thien ho so ky thuat README, AI_WORKLOG va quy trinh van hanh he thong` |
 
 ---
 
