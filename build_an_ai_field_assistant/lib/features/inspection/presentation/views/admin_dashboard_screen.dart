@@ -84,7 +84,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
 
     if (mounted) {
       if (success) {
-        DialogHelper.showSnackBar(context, '✓ Đã xuất báo cáo CSV thành công (chuẩn UTF-8 cho Excel)');
+        DialogHelper.showSnackBar(context, 'Đã xuất file báo cáo CSV thành công (chuẩn UTF-8)');
       } else {
         DialogHelper.showSnackBar(context, 'Không thể tải file báo cáo');
       }
@@ -274,7 +274,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                       );
                       if (mounted) {
                         if (ok) {
-                          DialogHelper.showSnackBar(context, '✓ Đã cập nhật điều độ phiếu thành công');
+                          DialogHelper.showSnackBar(context, 'Đã cập nhật điều độ phiếu thành công');
                         } else {
                           DialogHelper.showSnackBar(context, 'Không thể cập nhật phiếu');
                         }
@@ -514,18 +514,27 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                       ),
                       const SizedBox(width: 8),
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                         decoration: BoxDecoration(
-                          color: AppColors.primary.withValues(alpha: 0.2),
-                          borderRadius: BorderRadius.circular(4),
+                          color: AppColors.primary.withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(6),
+                          border: Border.all(color: AppColors.primary.withValues(alpha: 0.25), width: 1),
                         ),
-                        child: const Text(
-                          '👔 QUẢN ĐỐC',
-                          style: TextStyle(
-                            color: AppColors.primary,
-                            fontSize: 10,
-                            fontWeight: FontWeight.bold,
-                          ),
+                        child: const Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.shield_outlined, size: 12, color: AppColors.primary),
+                            SizedBox(width: 4),
+                            Text(
+                              'QUẢN ĐỐC',
+                              style: TextStyle(
+                                color: AppColors.primary,
+                                fontSize: 10,
+                                fontWeight: FontWeight.bold,
+                                letterSpacing: 0.4,
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                     ],
@@ -1060,68 +1069,149 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
   Widget _buildOperationalStatusDropdown(InspectionTicket ticket) {
     Color statusColor;
     String statusLabel;
+    IconData statusIcon;
 
     switch (ticket.operationalStatus) {
       case 'in_progress':
-        statusColor = const Color(0xFF3B82F6);
+        statusColor = const Color(0xFF2563EB); // Royal Blue
         statusLabel = 'Đang xử lý';
+        statusIcon = Icons.autorenew_rounded;
         break;
       case 'resolved':
-        statusColor = AppColors.success;
-        statusLabel = 'Đã xong';
+        statusColor = AppColors.primary; // Emerald
+        statusLabel = 'Đã khắc phục';
+        statusIcon = Icons.check_circle_outline_rounded;
         break;
       case 'closed':
-        statusColor = const Color(0xFF10B981);
-        statusLabel = 'Đã đóng';
+        statusColor = const Color(0xFF475569); // Slate
+        statusLabel = 'Đã nghiệm thu';
+        statusIcon = Icons.verified_outlined;
         break;
       default:
-        statusColor = const Color(0xFFF59E0B);
-        statusLabel = 'Chờ duyệt';
+        statusColor = const Color(0xFFD97706); // Amber
+        statusLabel = 'Chờ tiếp nhận';
+        statusIcon = Icons.schedule_rounded;
     }
 
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-      decoration: BoxDecoration(
-        color: statusColor.withValues(alpha: 0.15),
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: statusColor.withValues(alpha: 0.4)),
+    return Theme(
+      data: Theme.of(context).copyWith(
+        popupMenuTheme: PopupMenuThemeData(
+          color: AppColors.surface,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10),
+            side: const BorderSide(color: AppColors.cardBorder, width: 1),
+          ),
+          elevation: 4,
+          shadowColor: Colors.black.withValues(alpha: 0.12),
+        ),
       ),
       child: PopupMenuButton<String>(
-        tooltip: 'Đổi trạng thái điều độ',
+        tooltip: 'Thay đổi trạng thái điều độ',
         initialValue: ticket.operationalStatus,
+        offset: const Offset(0, 32),
         onSelected: (newStatus) async {
+          if (newStatus == ticket.operationalStatus) return;
           final ok = await widget.controller.updateOperationalStatus(ticket.id, newStatus);
           if (mounted && ok) {
-            DialogHelper.showSnackBar(context, '✓ Đã cập nhật trạng thái phiếu');
+            DialogHelper.showSnackBar(context, 'Đã cập nhật trạng thái phiếu');
           }
         },
         itemBuilder: (ctx) => [
-          const PopupMenuItem(value: 'pending_review', child: Text('⏳ Chờ tiếp nhận')),
-          const PopupMenuItem(value: 'in_progress', child: Text('🔧 Đang xử lý')),
-          const PopupMenuItem(value: 'resolved', child: Text('✓ Đã khắc phục')),
-          const PopupMenuItem(value: 'closed', child: Text('🔒 Nghiệm thu đóng')),
+          _buildStatusMenuItem(
+            value: 'pending_review',
+            label: 'Chờ tiếp nhận',
+            icon: Icons.schedule_rounded,
+            color: const Color(0xFFD97706),
+            isSelected: ticket.operationalStatus == 'pending_review',
+          ),
+          _buildStatusMenuItem(
+            value: 'in_progress',
+            label: 'Đang xử lý',
+            icon: Icons.autorenew_rounded,
+            color: const Color(0xFF2563EB),
+            isSelected: ticket.operationalStatus == 'in_progress',
+          ),
+          _buildStatusMenuItem(
+            value: 'resolved',
+            label: 'Đã khắc phục',
+            icon: Icons.check_circle_outline_rounded,
+            color: AppColors.primary,
+            isSelected: ticket.operationalStatus == 'resolved',
+          ),
+          _buildStatusMenuItem(
+            value: 'closed',
+            label: 'Đã nghiệm thu',
+            icon: Icons.verified_outlined,
+            color: const Color(0xFF475569),
+            isSelected: ticket.operationalStatus == 'closed',
+          ),
         ],
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              width: 6,
-              height: 6,
-              decoration: BoxDecoration(color: statusColor, shape: BoxShape.circle),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+          decoration: BoxDecoration(
+            color: statusColor.withValues(alpha: 0.08),
+            borderRadius: BorderRadius.circular(6),
+            border: Border.all(color: statusColor.withValues(alpha: 0.35), width: 1),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(statusIcon, size: 12, color: statusColor),
+              const SizedBox(width: 5),
+              Text(
+                statusLabel,
+                style: TextStyle(
+                  color: statusColor,
+                  fontSize: 11,
+                  fontWeight: FontWeight.w600,
+                  letterSpacing: -0.2,
+                ),
+              ),
+              const SizedBox(width: 3),
+              Icon(Icons.expand_more_rounded, color: statusColor, size: 14),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  PopupMenuItem<String> _buildStatusMenuItem({
+    required String value,
+    required String label,
+    required IconData icon,
+    required Color color,
+    required bool isSelected,
+  }) {
+    return PopupMenuItem<String>(
+      value: value,
+      height: 38,
+      padding: const EdgeInsets.symmetric(horizontal: 12),
+      child: Row(
+        children: [
+          Container(
+            width: 22,
+            height: 22,
+            decoration: BoxDecoration(
+              color: color.withValues(alpha: 0.12),
+              borderRadius: BorderRadius.circular(5),
             ),
-            const SizedBox(width: 6),
-            Text(
-              statusLabel,
+            child: Icon(icon, size: 13, color: color),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              label,
               style: TextStyle(
-                color: statusColor,
-                fontSize: 11,
-                fontWeight: FontWeight.bold,
+                color: isSelected ? color : AppColors.textPrimary,
+                fontSize: 12,
+                fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
               ),
             ),
-            const SizedBox(width: 4),
-            Icon(Icons.arrow_drop_down, color: statusColor, size: 16),
-          ],
-        ),
+          ),
+          if (isSelected)
+            Icon(Icons.check_rounded, size: 15, color: color),
+        ],
       ),
     );
   }
