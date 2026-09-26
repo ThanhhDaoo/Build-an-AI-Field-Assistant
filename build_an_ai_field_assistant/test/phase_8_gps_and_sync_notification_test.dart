@@ -78,6 +78,24 @@ class MockInspectionRepository implements IInspectionRepository {
   }
 
   @override
+  Future<InspectionTicket?> updateTicketOperationalStatus(
+    String ticketId,
+    String operationalStatus, {
+    String? assignedTo,
+    String? managerNotes,
+  }) async {
+    final index = tickets.indexWhere((t) => t.id == ticketId);
+    if (index == -1) return null;
+    final updated = tickets[index].copyWith(
+      operationalStatus: operationalStatus,
+      assignedTo: assignedTo,
+      managerNotes: managerNotes,
+    );
+    tickets[index] = updated;
+    return updated;
+  }
+
+  @override
   Future<int> syncPendingTickets() async {
     final pending = tickets.where((t) => t.isPendingSync).length;
     tickets = tickets.map((t) => t.copyWith(status: 'synced')).toList();

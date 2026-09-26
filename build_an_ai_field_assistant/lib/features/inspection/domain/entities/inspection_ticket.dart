@@ -62,6 +62,10 @@ class InspectionTicket {
   final String? equipmentId; // Mã thiết bị / phương tiện xe cơ giới
   final List<String> detectedIssues; // Danh sách các lỗi phát hiện dạng thẻ
   final List<InspectionPart> requiredParts; // Danh sách linh kiện kèm số lượng
+  final String operationalStatus; // pending_review, in_progress, resolved, closed
+  final String? assignedTo; // Kỹ sư được điều động xử lý sự cố
+  final String? managerNotes; // Ý kiến chỉ đạo của Quản đốc / Ban điều độ
+  final DateTime? resolvedAt; // Thời điểm nghiệm thu hoàn thành sự cố
   final DateTime createdAt;
   final DateTime updatedAt;
 
@@ -82,12 +86,20 @@ class InspectionTicket {
     this.equipmentId,
     this.detectedIssues = const [],
     this.requiredParts = const [],
+    this.operationalStatus = 'pending_review',
+    this.assignedTo,
+    this.managerNotes,
+    this.resolvedAt,
     required this.createdAt,
     required this.updatedAt,
   });
 
   bool get isSynced => status == 'synced';
   bool get isPendingSync => status == 'pending' || status == 'pending_sync';
+
+  bool get isPendingReview => operationalStatus == 'pending_review';
+  bool get isInProgress => operationalStatus == 'in_progress';
+  bool get isResolved => operationalStatus == 'resolved' || operationalStatus == 'closed';
 
   InspectionTicket copyWith({
     String? id,
@@ -106,6 +118,10 @@ class InspectionTicket {
     String? equipmentId,
     List<String>? detectedIssues,
     List<InspectionPart>? requiredParts,
+    String? operationalStatus,
+    String? assignedTo,
+    String? managerNotes,
+    DateTime? resolvedAt,
     DateTime? createdAt,
     DateTime? updatedAt,
   }) {
@@ -126,6 +142,10 @@ class InspectionTicket {
       equipmentId: equipmentId ?? this.equipmentId,
       detectedIssues: detectedIssues ?? this.detectedIssues,
       requiredParts: requiredParts ?? this.requiredParts,
+      operationalStatus: operationalStatus ?? this.operationalStatus,
+      assignedTo: assignedTo ?? this.assignedTo,
+      managerNotes: managerNotes ?? this.managerNotes,
+      resolvedAt: resolvedAt ?? this.resolvedAt,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
     );

@@ -21,6 +21,10 @@ class InspectionTicketModel extends InspectionTicket {
     super.equipmentId,
     super.detectedIssues = const [],
     super.requiredParts = const [],
+    super.operationalStatus = 'pending_review',
+    super.assignedTo,
+    super.managerNotes,
+    super.resolvedAt,
     required super.createdAt,
     required super.updatedAt,
   });
@@ -44,6 +48,10 @@ class InspectionTicketModel extends InspectionTicket {
       equipmentId: entity.equipmentId,
       detectedIssues: entity.detectedIssues,
       requiredParts: entity.requiredParts,
+      operationalStatus: entity.operationalStatus,
+      assignedTo: entity.assignedTo,
+      managerNotes: entity.managerNotes,
+      resolvedAt: entity.resolvedAt,
       createdAt: entity.createdAt,
       updatedAt: entity.updatedAt,
     );
@@ -117,6 +125,12 @@ class InspectionTicketModel extends InspectionTicket {
       equipmentId: (json['equipment_id'] ?? json['equipmentId']) as String?,
       detectedIssues: _parseIssues(json['detected_issues'] ?? json['detectedIssues']),
       requiredParts: _parseParts(json['required_parts'] ?? json['requiredParts']),
+      operationalStatus: (json['operational_status'] ?? json['operationalStatus']) as String? ?? 'pending_review',
+      assignedTo: (json['assigned_to'] ?? json['assignedTo']) as String?,
+      managerNotes: (json['manager_notes'] ?? json['managerNotes']) as String?,
+      resolvedAt: (json['resolved_at'] ?? json['resolvedAt']) != null
+          ? DateTime.tryParse((json['resolved_at'] ?? json['resolvedAt']) as String)
+          : null,
       createdAt: json['created_at'] != null
           ? DateTime.parse(json['created_at'] as String)
           : now,
@@ -151,6 +165,7 @@ class InspectionTicketModel extends InspectionTicket {
       equipmentId: (map['equipment_id'] ?? map['equipmentId']) as String?,
       detectedIssues: _parseIssues(map['detected_issues'] ?? map['detectedIssues']),
       requiredParts: _parseParts(map['required_parts'] ?? map['requiredParts']),
+      operationalStatus: 'pending_review',
       createdAt: now,
       updatedAt: now,
     );
@@ -175,6 +190,10 @@ class InspectionTicketModel extends InspectionTicket {
       'equipment_id': equipmentId,
       'detected_issues': detectedIssues,
       'required_parts': requiredParts.map((p) => p.toJson()).toList(),
+      'operational_status': operationalStatus,
+      'assigned_to': assignedTo,
+      'manager_notes': managerNotes,
+      'resolved_at': resolvedAt?.toIso8601String(),
       'created_at': createdAt.toIso8601String(),
       'updated_at': updatedAt.toIso8601String(),
     };
@@ -199,6 +218,10 @@ class InspectionTicketModel extends InspectionTicket {
       equipmentId: map['equipment_id'] as String?,
       detectedIssues: _parseIssues(map['detected_issues']),
       requiredParts: _parseParts(map['required_parts']),
+      operationalStatus: map['operational_status'] as String? ?? 'pending_review',
+      assignedTo: map['assigned_to'] as String?,
+      managerNotes: map['manager_notes'] as String?,
+      resolvedAt: map['resolved_at'] != null ? DateTime.tryParse(map['resolved_at'] as String) : null,
       createdAt: DateTime.parse(map['created_at'] as String),
       updatedAt: DateTime.parse(map['updated_at'] as String),
     );
@@ -223,6 +246,10 @@ class InspectionTicketModel extends InspectionTicket {
       'equipment_id': equipmentId,
       'detected_issues': jsonEncode(detectedIssues),
       'required_parts': jsonEncode(requiredParts.map((p) => p.toJson()).toList()),
+      'operational_status': operationalStatus,
+      'assigned_to': assignedTo,
+      'manager_notes': managerNotes,
+      'resolved_at': resolvedAt?.toIso8601String(),
       'created_at': createdAt.toIso8601String(),
       'updated_at': updatedAt.toIso8601String(),
     };

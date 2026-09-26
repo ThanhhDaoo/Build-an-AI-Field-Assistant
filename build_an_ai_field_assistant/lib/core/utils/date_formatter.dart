@@ -12,6 +12,10 @@ class DateFormatter {
     return _fullFormat.format(dateTime.toLocal());
   }
 
+  static String formatVietnamese(DateTime dateTime) {
+    return _fullFormat.format(dateTime.toLocal());
+  }
+
   static String formatDate(DateTime dateTime) {
     return _dateFormat.format(dateTime.toLocal());
   }

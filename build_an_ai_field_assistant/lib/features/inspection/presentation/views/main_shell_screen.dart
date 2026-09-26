@@ -9,6 +9,7 @@ import '../controllers/inspection_controller.dart';
 import '../widgets/in_app_sync_banner.dart';
 import '../widgets/inspection_image_widget.dart';
 import '../widgets/priority_badge_chip.dart';
+import 'admin_dashboard_screen.dart';
 import 'ticket_history_screen.dart';
 import 'ticket_review_screen.dart';
 import 'voice_capture_screen.dart';
@@ -175,6 +176,7 @@ class _MainShellScreenState extends State<MainShellScreen> {
                     controller: ctrl,
                     onNavigateToRecord: () => setState(() => _currentIndex = 1),
                     onOpenSettings: _showSettingsModal,
+                    onNavigateToAdmin: () => setState(() => _currentIndex = 3),
                   ),
                   VoiceCaptureScreen(
                     controller: ctrl,
@@ -183,6 +185,10 @@ class _MainShellScreenState extends State<MainShellScreen> {
                   TicketHistoryScreen(
                     controller: ctrl,
                     embeddedMode: true,
+                  ),
+                  AdminDashboardScreen(
+                    controller: ctrl,
+                    onSwitchToFieldMode: () => setState(() => _currentIndex = 0),
                   ),
                 ],
               ),
@@ -218,7 +224,7 @@ class _MainShellScreenState extends State<MainShellScreen> {
                 const BottomNavigationBarItem(
                   icon: Icon(Icons.dashboard_outlined),
                   activeIcon: Icon(Icons.dashboard_rounded),
-                  label: 'Tổng quan',
+                  label: 'Hiện trường',
                 ),
                 BottomNavigationBarItem(
                   icon: Container(
@@ -267,6 +273,11 @@ class _MainShellScreenState extends State<MainShellScreen> {
                   activeIcon: const Icon(Icons.receipt_long_rounded),
                   label: 'Biên bản',
                 ),
+                const BottomNavigationBarItem(
+                  icon: Icon(Icons.admin_panel_settings_outlined),
+                  activeIcon: Icon(Icons.admin_panel_settings_rounded),
+                  label: 'Quản trị',
+                ),
               ],
             ),
           ),
@@ -281,11 +292,13 @@ class _DashboardTabView extends StatefulWidget {
   final InspectionController controller;
   final VoidCallback onNavigateToRecord;
   final VoidCallback onOpenSettings;
+  final VoidCallback onNavigateToAdmin;
 
   const _DashboardTabView({
     required this.controller,
     required this.onNavigateToRecord,
     required this.onOpenSettings,
+    required this.onNavigateToAdmin,
   });
 
   @override
@@ -506,6 +519,13 @@ class _DashboardTabViewState extends State<_DashboardTabView> {
                 ),
                 const SizedBox(width: 6),
 
+                // Admin dashboard button
+                IconButton(
+                  icon: const Icon(Icons.admin_panel_settings_rounded, color: AppColors.primary, size: 22),
+                  onPressed: widget.onNavigateToAdmin,
+                  tooltip: 'Trung tâm Quản trị & Điều độ',
+                ),
+
                 // Settings icon button
                 IconButton(
                   icon: const Icon(Icons.settings_outlined, color: AppColors.textSecondary, size: 22),
@@ -630,6 +650,36 @@ class _DashboardTabViewState extends State<_DashboardTabView> {
                               ),
                             ),
                           ],
+                        ),
+                        const SizedBox(height: 12),
+                        InkWell(
+                          onTap: widget.onNavigateToAdmin,
+                          borderRadius: BorderRadius.circular(8),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                            decoration: BoxDecoration(
+                              color: AppColors.primary.withValues(alpha: 0.1),
+                              borderRadius: BorderRadius.circular(8),
+                              border: Border.all(color: AppColors.primary.withValues(alpha: 0.25)),
+                            ),
+                            child: const Row(
+                              children: [
+                                Icon(Icons.admin_panel_settings_rounded, size: 16, color: AppColors.primary),
+                                SizedBox(width: 8),
+                                Expanded(
+                                  child: Text(
+                                    'Trung tâm Quản trị (Bảng tổng hợp, phân công, xuất CSV)',
+                                    style: TextStyle(
+                                      color: AppColors.primary,
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                ),
+                                Icon(Icons.arrow_forward_ios_rounded, size: 11, color: AppColors.primary),
+                              ],
+                            ),
+                          ),
                         ),
                       ],
                     ),

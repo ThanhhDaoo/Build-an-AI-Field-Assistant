@@ -49,6 +49,10 @@ class InspectionLocalDataSourceImpl implements IInspectionLocalDataSource {
               equipment_id TEXT,
               detected_issues TEXT,
               required_parts TEXT,
+              operational_status TEXT,
+              assigned_to TEXT,
+              manager_notes TEXT,
+              resolved_at TEXT,
               created_at TEXT NOT NULL,
               updated_at TEXT NOT NULL
             )
@@ -71,6 +75,18 @@ class InspectionLocalDataSourceImpl implements IInspectionLocalDataSource {
               await db.execute('ALTER TABLE ${AppConstants.ticketsTable} ADD COLUMN image_path TEXT');
             } catch (_) {}
           }
+          try {
+            await db.execute('ALTER TABLE ${AppConstants.ticketsTable} ADD COLUMN operational_status TEXT');
+          } catch (_) {}
+          try {
+            await db.execute('ALTER TABLE ${AppConstants.ticketsTable} ADD COLUMN assigned_to TEXT');
+          } catch (_) {}
+          try {
+            await db.execute('ALTER TABLE ${AppConstants.ticketsTable} ADD COLUMN manager_notes TEXT');
+          } catch (_) {}
+          try {
+            await db.execute('ALTER TABLE ${AppConstants.ticketsTable} ADD COLUMN resolved_at TEXT');
+          } catch (_) {}
         },
       );
       return _database;
@@ -147,6 +163,18 @@ class InspectionLocalDataSourceImpl implements IInspectionLocalDataSource {
             } catch (_) {}
             try {
               await db.execute('ALTER TABLE ${AppConstants.ticketsTable} ADD COLUMN image_path TEXT');
+            } catch (_) {}
+            try {
+              await db.execute('ALTER TABLE ${AppConstants.ticketsTable} ADD COLUMN operational_status TEXT');
+            } catch (_) {}
+            try {
+              await db.execute('ALTER TABLE ${AppConstants.ticketsTable} ADD COLUMN assigned_to TEXT');
+            } catch (_) {}
+            try {
+              await db.execute('ALTER TABLE ${AppConstants.ticketsTable} ADD COLUMN manager_notes TEXT');
+            } catch (_) {}
+            try {
+              await db.execute('ALTER TABLE ${AppConstants.ticketsTable} ADD COLUMN resolved_at TEXT');
             } catch (_) {}
             await db.insert(
               AppConstants.ticketsTable,
@@ -254,20 +282,6 @@ class InspectionLocalDataSourceImpl implements IInspectionLocalDataSource {
     final now = DateTime.now();
     return [
       InspectionTicketModel(
-        id: 'seed-01',
-        title: 'Nứt vỏ van điều áp đường ống chính',
-        description: 'Van điều áp thủy lực chính bị rỉ dầu gây trơn trượt khu vực sàn gia công.',
-        location: 'Phân xưởng cán thép số 2',
-        category: 'mechanical',
-        priority: 'high',
-        status: 'synced',
-        suggestedAction: 'Thay thế van dự phòng DN50 và dọn cát thấm dầu bề mặt sàn.',
-        inspectorName: 'Kỹ sư Hoàng Nam',
-        confidenceScore: 0.98,
-        createdAt: now.subtract(const Duration(hours: 2)),
-        updatedAt: now.subtract(const Duration(hours: 2)),
-      ),
-      InspectionTicketModel(
         id: 'seed-02',
         title: 'Chập tia lửa điện tại Tủ điện số 4',
         description: 'Tủ điện bốc mùi khét nồng, Aptomat nóng quá nhiệt có tia lửa điện nhỏ.',
@@ -278,8 +292,50 @@ class InspectionLocalDataSourceImpl implements IInspectionLocalDataSource {
         suggestedAction: 'Cắt cầu dao tổng ngay lập tức và phân công đội cơ điện xử lý.',
         inspectorName: 'Kỹ sư Tuấn Anh',
         confidenceScore: 0.99,
+        operationalStatus: 'pending_review',
+        equipmentId: 'ELEC-PANEL-04',
+        detectedIssues: const ['Chập tia lửa điện', 'Aptomat quá nhiệt', 'Mùi khét cách điện'],
         createdAt: now.subtract(const Duration(minutes: 35)),
         updatedAt: now.subtract(const Duration(minutes: 35)),
+      ),
+      InspectionTicketModel(
+        id: 'seed-01',
+        title: 'Nứt vỏ van điều áp đường ống chính',
+        description: 'Van điều áp thủy lực chính bị rỉ dầu gây trơn trượt khu vực sàn gia công.',
+        location: 'Phân xưởng cán thép số 2',
+        category: 'mechanical',
+        priority: 'high',
+        status: 'synced',
+        suggestedAction: 'Thay thế van dự phòng DN50 và dọn cát thấm dầu bề mặt sàn.',
+        inspectorName: 'Kỹ sư Hoàng Nam',
+        confidenceScore: 0.98,
+        operationalStatus: 'in_progress',
+        assignedTo: 'Kỹ sư Vũ Thành (Đội Cơ Điện)',
+        managerNotes: 'Đã ký phiếu xuất kho van DN50. Yêu cầu hoàn thành trước khi giao ca 2.',
+        equipmentId: 'HYDR-VALVE-DN50',
+        detectedIssues: const ['Rò rỉ dầu thủy lực', 'Nứt vỏ van chịu áp'],
+        createdAt: now.subtract(const Duration(hours: 2)),
+        updatedAt: now.subtract(const Duration(hours: 1)),
+      ),
+      InspectionTicketModel(
+        id: 'seed-03',
+        title: 'Rung lắc bất thường trục Motor bơm giải nhiệt',
+        description: 'Động cơ bơm nước làm mát bị rung lắc biên độ lớn, nhiệt độ vỏ motor 78 độ C.',
+        location: 'Trạm bơm tuần hoàn tháp làm mát',
+        category: 'mechanical',
+        priority: 'medium',
+        status: 'synced',
+        suggestedAction: 'Kiểm tra độ đồng tâm trục và thay thế bạc đạn SKF 6205.',
+        inspectorName: 'Kỹ sư Trần Đức',
+        confidenceScore: 0.96,
+        operationalStatus: 'resolved',
+        assignedTo: 'Kỹ sư Lê Minh',
+        managerNotes: 'Đã căn chỉnh lại trục và thay bạc đạn. Nghiệm thu chạy thử đạt chuẩn.',
+        resolvedAt: now.subtract(const Duration(minutes: 15)),
+        equipmentId: 'PUMP-COOL-02',
+        detectedIssues: const ['Rung lắc biên độ lớn', 'Hỏng bạc đạn trục'],
+        createdAt: now.subtract(const Duration(hours: 5)),
+        updatedAt: now.subtract(const Duration(minutes: 15)),
       ),
     ];
   }

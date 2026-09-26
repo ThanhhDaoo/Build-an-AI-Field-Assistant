@@ -150,6 +150,31 @@ class InspectionRepositoryImpl implements IInspectionRepository {
   }
 
   @override
+  Future<InspectionTicket?> updateTicketOperationalStatus(
+    String ticketId,
+    String operationalStatus, {
+    String? assignedTo,
+    String? managerNotes,
+  }) async {
+    final tickets = await localDataSource.getTickets();
+    final index = tickets.indexWhere((t) => t.id == ticketId);
+    if (index == -1) return null;
+
+    final current = tickets[index];
+    final isNowResolved = operationalStatus == 'resolved' || operationalStatus == 'closed';
+    final updated = current.copyWith(
+      operationalStatus: operationalStatus,
+      assignedTo: assignedTo ?? current.assignedTo,
+      managerNotes: managerNotes ?? current.managerNotes,
+      resolvedAt: isNowResolved ? (current.resolvedAt ?? DateTime.now()) : current.resolvedAt,
+      updatedAt: DateTime.now(),
+    );
+
+    await saveTicket(updated);
+    return updated;
+  }
+
+  @override
   Future<void> deleteTicket(String id) async {
     await localDataSource.deleteTicket(id);
     await getTickets(); // Refresh stream

@@ -37,6 +37,8 @@ class AppColors {
   static const Color statusSynced = Color(0xFF16A34A);
   static const Color statusPending = Color(0xFFD97706);
   static const Color statusDraft = Color(0xFF64748B);
+  static const Color success = Color(0xFF16A34A);
+  static const Color error = Color(0xFFDC2626);
 
   // Waveform & Recording State
   static const Color recordingActive = Color(0xFFDC2626);

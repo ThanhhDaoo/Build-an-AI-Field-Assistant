@@ -74,6 +74,13 @@ class InspectionController extends ChangeNotifier {
   int get pendingCount => _tickets.where((t) => t.isPendingSync).length;
   int get syncedCount => _tickets.where((t) => t.isSynced).length;
 
+  // Admin Operations Metrics
+  int get totalTicketsCount => _tickets.length;
+  int get criticalTicketsCount => _tickets.where((t) => t.priority.toLowerCase() == 'critical').length;
+  int get pendingReviewTicketsCount => _tickets.where((t) => t.isPendingReview).length;
+  int get inProgressTicketsCount => _tickets.where((t) => t.isInProgress).length;
+  int get resolvedTicketsCount => _tickets.where((t) => t.isResolved).length;
+
   // Currently active draft ticket being reviewed
   InspectionTicket? _currentDraftTicket;
   InspectionTicket? get currentDraftTicket => _currentDraftTicket;
@@ -379,6 +386,32 @@ class InspectionController extends ChangeNotifier {
     } finally {
       _isSyncing = false;
       notifyListeners();
+    }
+  }
+
+  /// Update operational status, assignee, and notes for dispatcher workflow
+  Future<bool> updateOperationalStatus(
+    String ticketId,
+    String operationalStatus, {
+    String? assignedTo,
+    String? managerNotes,
+  }) async {
+    try {
+      final updated = await repository.updateTicketOperationalStatus(
+        ticketId,
+        operationalStatus,
+        assignedTo: assignedTo,
+        managerNotes: managerNotes,
+      );
+      if (updated != null) {
+        await loadTickets();
+        return true;
+      }
+      return false;
+    } catch (e) {
+      _errorMessage = 'Không thể cập nhật trạng thái: $e';
+      notifyListeners();
+      return false;
     }
   }
 

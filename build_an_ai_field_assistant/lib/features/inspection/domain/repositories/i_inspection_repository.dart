@@ -30,6 +30,14 @@ abstract class IInspectionRepository {
   /// Save or update an inspection ticket (handles online vs offline sync logic)
   Future<InspectionTicket> saveTicket(InspectionTicket ticket);
 
+  /// Update operational lifecycle status and assignment of a ticket
+  Future<InspectionTicket?> updateTicketOperationalStatus(
+    String ticketId,
+    String operationalStatus, {
+    String? assignedTo,
+    String? managerNotes,
+  });
+
   /// Delete an inspection ticket
   Future<void> deleteTicket(String id);
 
