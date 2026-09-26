@@ -961,224 +961,302 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
   }
 
   Widget _buildDesktopDataTable(List<InspectionTicket> tickets) {
-    return Container(
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.cardBorder),
-      ),
-      clipBehavior: Clip.antiAlias,
-      child: SingleChildScrollView(
-        scrollDirection: Axis.horizontal,
-        child: DataTable(
-          headingRowColor: WidgetStateProperty.all(AppColors.surfaceLight),
-          dataRowMinHeight: 64,
-          dataRowMaxHeight: 74,
-          columnSpacing: 20,
-          horizontalMargin: 16,
-          columns: const [
-            DataColumn(label: Text('MÃ & THỜI GIAN', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 11))),
-            DataColumn(label: Text('ẢNH', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 11))),
-            DataColumn(label: Text('SỰ CỐ & THIẾT BỊ', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 11))),
-            DataColumn(label: Text('MỨC ĐỘ', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 11))),
-            DataColumn(label: Text('NGƯỜI LẬP & PHÂN CÔNG', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 11))),
-            DataColumn(label: Text('TRẠNG THÁI ĐIỀU ĐỘ', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 11))),
-            DataColumn(label: Text('THAO TÁC', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 11))),
-          ],
-          rows: tickets.map((ticket) {
-            final hasImage = ticket.imagePath != null && ticket.imagePath!.isNotEmpty;
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final availableWidth = constraints.maxWidth;
+        const minTableWidth = 980.0;
+        final tableWidth = availableWidth > minTableWidth ? availableWidth : minTableWidth;
 
-            return DataRow(
-              cells: [
-                // 1. Mã & Thời gian
-                DataCell(
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisAlignment: MainAxisAlignment.center,
+        return Container(
+          decoration: BoxDecoration(
+            color: AppColors.surface,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: AppColors.cardBorder),
+          ),
+          clipBehavior: Clip.antiAlias,
+          child: SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: SizedBox(
+              width: tableWidth,
+              child: Table(
+                defaultVerticalAlignment: TableCellVerticalAlignment.middle,
+                columnWidths: const {
+                  0: FlexColumnWidth(1.2), // Mã & Thời gian
+                  1: FixedColumnWidth(60),  // Thumbnail ảnh
+                  2: FlexColumnWidth(2.8), // Sự cố & Thiết bị
+                  3: FlexColumnWidth(1.1), // Mức độ
+                  4: FlexColumnWidth(1.7), // Người lập & Phân công
+                  5: FlexColumnWidth(1.6), // Trạng thái điều độ
+                  6: FixedColumnWidth(88),  // Thao tác
+                },
+                border: const TableBorder(
+                  horizontalInside: BorderSide(color: AppColors.cardBorder, width: 1),
+                ),
+                children: [
+                  TableRow(
+                    decoration: const BoxDecoration(color: AppColors.surfaceLight),
                     children: [
-                      Text(
-                        '#${ticket.id.length > 8 ? ticket.id.substring(0, 8) : ticket.id}',
-                        style: const TextStyle(
-                          color: AppColors.primary,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 12,
-                        ),
-                      ),
-                      const SizedBox(height: 2),
-                      Text(
-                        DateFormatter.formatVietnamese(ticket.createdAt),
-                        style: const TextStyle(color: AppColors.textMuted, fontSize: 10),
-                      ),
+                      _buildHeaderCell('MÃ & THỜI GIAN'),
+                      _buildHeaderCell('ẢNH'),
+                      _buildHeaderCell('SỰ CỐ & THIẾT BỊ'),
+                      _buildHeaderCell('MỨC ĐỘ'),
+                      _buildHeaderCell('NGƯỜI LẬP & PHÂN CÔNG'),
+                      _buildHeaderCell('TRẠNG THÁI ĐIỀU ĐỘ'),
+                      _buildHeaderCell('THAO TÁC', alignment: Alignment.center),
                     ],
                   ),
-                ),
+                  ...tickets.map((ticket) {
+                    final hasImage = ticket.imagePath != null && ticket.imagePath!.isNotEmpty;
 
-                // 2. Thumbnail Ảnh
-                DataCell(
-                  hasImage
-                      ? InkWell(
-                          onTap: () => _showImagePreviewDialog(ticket.imagePath!, ticket.title),
-                          borderRadius: BorderRadius.circular(6),
-                          child: ClipRRect(
-                            borderRadius: BorderRadius.circular(6),
-                            child: InspectionImageWidget(
-                              imagePath: ticket.imagePath!,
-                              width: 44,
-                              height: 44,
-                              fit: BoxFit.cover,
-                            ),
-                          ),
-                        )
-                      : Container(
-                          width: 44,
-                          height: 44,
-                          decoration: BoxDecoration(
-                            color: AppColors.background,
-                            borderRadius: BorderRadius.circular(6),
-                            border: Border.all(color: AppColors.cardBorder),
-                          ),
-                          child: const Icon(Icons.image_not_supported_outlined, size: 16, color: AppColors.textMuted),
-                        ),
-                ),
-
-                // 3. Sự cố & Thiết bị
-                DataCell(
-                  ConstrainedBox(
-                    constraints: const BoxConstraints(maxWidth: 240),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisAlignment: MainAxisAlignment.center,
+                    return TableRow(
                       children: [
-                        Text(
-                          ticket.title,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
-                            color: AppColors.textPrimary,
-                            fontWeight: FontWeight.w600,
-                            fontSize: 12,
-                          ),
-                        ),
-                        const SizedBox(height: 2),
-                        Row(
-                          children: [
-                            if (ticket.equipmentId != null) ...[
-                              Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
-                                decoration: BoxDecoration(
-                                  color: AppColors.background,
-                                  borderRadius: BorderRadius.circular(3),
-                                  border: Border.all(color: AppColors.cardBorder),
-                                ),
-                                child: Text(
-                                  ticket.equipmentId!,
+                        // 1. Mã & Thời gian
+                        _buildTableCell(
+                          InkWell(
+                            onTap: () => _navigateToTicketDetail(ticket),
+                            borderRadius: BorderRadius.circular(4),
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  '#${ticket.id.length > 8 ? ticket.id.substring(0, 8) : ticket.id}',
                                   style: const TextStyle(
-                                    color: AppColors.textSecondary,
-                                    fontSize: 9,
+                                    color: AppColors.primary,
                                     fontWeight: FontWeight.bold,
+                                    fontSize: 12,
                                   ),
                                 ),
-                              ),
-                              const SizedBox(width: 4),
-                            ],
-                            Expanded(
-                              child: Text(
-                                ticket.location,
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                style: const TextStyle(color: AppColors.textMuted, fontSize: 10),
-                              ),
+                                const SizedBox(height: 2),
+                                Text(
+                                  DateFormatter.formatVietnamese(ticket.createdAt),
+                                  style: const TextStyle(color: AppColors.textMuted, fontSize: 10),
+                                ),
+                              ],
                             ),
-                          ],
+                          ),
+                        ),
+
+                        // 2. Thumbnail Ảnh
+                        _buildTableCell(
+                          hasImage
+                              ? InkWell(
+                                  onTap: () => _showImagePreviewDialog(ticket.imagePath!, ticket.title),
+                                  borderRadius: BorderRadius.circular(6),
+                                  child: ClipRRect(
+                                    borderRadius: BorderRadius.circular(6),
+                                    child: InspectionImageWidget(
+                                      imagePath: ticket.imagePath!,
+                                      width: 44,
+                                      height: 44,
+                                      fit: BoxFit.cover,
+                                    ),
+                                  ),
+                                )
+                              : Container(
+                                  width: 44,
+                                  height: 44,
+                                  decoration: BoxDecoration(
+                                    color: AppColors.background,
+                                    borderRadius: BorderRadius.circular(6),
+                                    border: Border.all(color: AppColors.cardBorder),
+                                  ),
+                                  child: const Icon(
+                                    Icons.image_not_supported_outlined,
+                                    size: 16,
+                                    color: AppColors.textMuted,
+                                  ),
+                                ),
+                        ),
+
+                        // 3. Sự cố & Thiết bị
+                        _buildTableCell(
+                          InkWell(
+                            onTap: () => _navigateToTicketDetail(ticket),
+                            borderRadius: BorderRadius.circular(4),
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  ticket.title,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: const TextStyle(
+                                    color: AppColors.textPrimary,
+                                    fontWeight: FontWeight.w600,
+                                    fontSize: 12,
+                                  ),
+                                ),
+                                const SizedBox(height: 3),
+                                Row(
+                                  children: [
+                                    if (ticket.equipmentId != null) ...[
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+                                        decoration: BoxDecoration(
+                                          color: AppColors.background,
+                                          borderRadius: BorderRadius.circular(3),
+                                          border: Border.all(color: AppColors.cardBorder),
+                                        ),
+                                        child: Text(
+                                          ticket.equipmentId!,
+                                          style: const TextStyle(
+                                            color: AppColors.textSecondary,
+                                            fontSize: 9,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
+                                      ),
+                                      const SizedBox(width: 4),
+                                    ],
+                                    Expanded(
+                                      child: Text(
+                                        ticket.location,
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                        style: const TextStyle(color: AppColors.textMuted, fontSize: 10),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+
+                        // 4. Mức độ
+                        _buildTableCell(
+                          Align(
+                            alignment: Alignment.centerLeft,
+                            child: PriorityBadgeChip(priority: ticket.priority),
+                          ),
+                        ),
+
+                        // 5. Người lập & Phân công
+                        _buildTableCell(
+                          Column(
+                            mainAxisSize: MainAxisSize.min,
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                children: [
+                                  const Icon(Icons.person_outline, size: 12, color: AppColors.textMuted),
+                                  const SizedBox(width: 4),
+                                  Flexible(
+                                    child: Text(
+                                      ticket.inspectorName,
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: const TextStyle(color: AppColors.textSecondary, fontSize: 11),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 3),
+                              Row(
+                                children: [
+                                  Icon(
+                                    Icons.engineering_outlined,
+                                    size: 12,
+                                    color: ticket.assignedTo != null ? AppColors.primary : AppColors.textMuted,
+                                  ),
+                                  const SizedBox(width: 4),
+                                  Flexible(
+                                    child: Text(
+                                      ticket.assignedTo ?? 'Chưa phân công',
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: TextStyle(
+                                        color: ticket.assignedTo != null ? AppColors.primary : AppColors.textMuted,
+                                        fontSize: 10,
+                                        fontWeight: ticket.assignedTo != null ? FontWeight.bold : FontWeight.normal,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                        ),
+
+                        // 6. Trạng thái điều độ (Dropdown)
+                        _buildTableCell(
+                          Align(
+                            alignment: Alignment.centerLeft,
+                            child: _buildOperationalStatusDropdown(ticket),
+                          ),
+                        ),
+
+                        // 7. Thao tác
+                        _buildTableCell(
+                          Row(
+                            mainAxisSize: MainAxisSize.min,
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              IconButton(
+                                icon: const Icon(Icons.assignment_ind_rounded, size: 18, color: AppColors.primary),
+                                tooltip: 'Giao việc & Ghi chú',
+                                constraints: const BoxConstraints(),
+                                padding: const EdgeInsets.all(6),
+                                onPressed: () => _showDispatchModal(ticket),
+                              ),
+                              IconButton(
+                                icon: const Icon(Icons.visibility_outlined, size: 18, color: AppColors.textSecondary),
+                                tooltip: 'Xem chi tiết',
+                                constraints: const BoxConstraints(),
+                                padding: const EdgeInsets.all(6),
+                                onPressed: () => _navigateToTicketDetail(ticket),
+                              ),
+                            ],
+                          ),
+                          alignment: Alignment.center,
                         ),
                       ],
-                    ),
-                  ),
-                ),
+                    );
+                  }),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
 
-                // 4. Mức độ
-                DataCell(
-                  PriorityBadgeChip(priority: ticket.priority),
-                ),
-
-                // 5. Người lập & Phân công
-                DataCell(
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          const Icon(Icons.person_outline, size: 12, color: AppColors.textMuted),
-                          const SizedBox(width: 4),
-                          Text(
-                            ticket.inspectorName,
-                            style: const TextStyle(color: AppColors.textSecondary, fontSize: 11),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 2),
-                      Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(
-                            Icons.engineering_outlined,
-                            size: 12,
-                            color: ticket.assignedTo != null ? AppColors.primary : AppColors.textMuted,
-                          ),
-                          const SizedBox(width: 4),
-                          Text(
-                            ticket.assignedTo ?? 'Chưa phân công',
-                            style: TextStyle(
-                              color: ticket.assignedTo != null ? AppColors.primary : AppColors.textMuted,
-                              fontSize: 10,
-                              fontWeight: ticket.assignedTo != null ? FontWeight.bold : FontWeight.normal,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-
-                // 6. Trạng thái vận hành (1-Touch Dropdown)
-                DataCell(
-                  _buildOperationalStatusDropdown(ticket),
-                ),
-
-                // 7. Thao tác
-                DataCell(
-                  Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      IconButton(
-                        icon: const Icon(Icons.assignment_ind_rounded, size: 18, color: AppColors.primary),
-                        tooltip: 'Giao việc & Ghi chú',
-                        onPressed: () => _showDispatchModal(ticket),
-                      ),
-                      IconButton(
-                        icon: const Icon(Icons.visibility_outlined, size: 18, color: AppColors.textSecondary),
-                        tooltip: 'Xem chi tiết',
-                        onPressed: () {
-                          Navigator.of(context).push(
-                            MaterialPageRoute(
-                              builder: (_) => TicketReviewScreen(
-                                controller: widget.controller,
-                                initialTicket: ticket,
-                              ),
-                            ),
-                          );
-                        },
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            );
-          }).toList(),
+  void _navigateToTicketDetail(InspectionTicket ticket) {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => TicketReviewScreen(
+          controller: widget.controller,
+          initialTicket: ticket,
         ),
       ),
+    );
+  }
+
+  Widget _buildHeaderCell(String text, {Alignment alignment = Alignment.centerLeft}) {
+    return Container(
+      alignment: alignment,
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+      child: Text(
+        text,
+        style: const TextStyle(
+          fontWeight: FontWeight.bold,
+          fontSize: 11,
+          color: AppColors.textSecondary,
+          letterSpacing: 0.3,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTableCell(Widget child, {Alignment alignment = Alignment.centerLeft, EdgeInsetsGeometry? padding}) {
+    return Container(
+      constraints: const BoxConstraints(minHeight: 66),
+      alignment: alignment,
+      padding: padding ?? const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+      child: child,
     );
   }
 
