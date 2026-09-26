@@ -8,6 +8,9 @@ import 'package:image_picker/image_picker.dart';
 /// trên mọi nền tảng (Web, Android, iOS, macOS) dưới dạng Data URI / Base64
 /// để không bị mất khi thoát ứng dụng hoặc tải lại trang web.
 class MediaPersistenceHelper {
+  /// Kiểm tra xem một chuỗi có phải là Data URI hay không
+  static bool isDataUri(String path) => path.startsWith('data:');
+
   /// Chuyển đổi XFile từ ImagePicker thành chuỗi Base64 Data URI vĩnh cửu
   static Future<String> persistImage(XFile pickedFile) async {
     try {
