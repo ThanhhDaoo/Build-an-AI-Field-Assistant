@@ -7,6 +7,7 @@ import '../../../../core/utils/dialog_helper.dart';
 import '../../domain/entities/inspection_ticket.dart';
 import '../controllers/inspection_controller.dart';
 import '../widgets/in_app_sync_banner.dart';
+import '../widgets/inspection_image_widget.dart';
 import '../widgets/priority_badge_chip.dart';
 import 'ticket_history_screen.dart';
 import 'ticket_review_screen.dart';
@@ -853,6 +854,9 @@ class _DashboardTabViewState extends State<_DashboardTabView> {
   }
 
   Widget _buildTicketItem(BuildContext context, InspectionTicket ticket, InspectionController ctrl) {
+    final hasImage = ticket.imagePath != null && ticket.imagePath!.isNotEmpty;
+    final hasAudio = ticket.audioPath != null && ticket.audioPath!.isNotEmpty;
+
     return Material(
       color: Colors.transparent,
       child: InkWell(
@@ -874,62 +878,97 @@ class _DashboardTabViewState extends State<_DashboardTabView> {
             borderRadius: BorderRadius.circular(12),
             border: Border.all(color: AppColors.cardBorder),
           ),
-          child: Column(
+          child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  PriorityBadgeChip(priority: ticket.priority),
-                  Row(
-                    children: [
-                      Icon(
-                        ticket.isSynced ? Icons.cloud_done_rounded : Icons.cloud_upload_outlined,
-                        size: 14,
-                        color: ticket.isSynced ? AppColors.statusSynced : AppColors.statusPending,
-                      ),
-                      const SizedBox(width: 4),
-                      Text(
-                        ticket.isSynced ? 'Đã sync' : 'Chờ sync',
-                        style: TextStyle(
-                          fontSize: 11,
-                          color: ticket.isSynced ? AppColors.statusSynced : AppColors.statusPending,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-              const SizedBox(height: 8),
-              Text(
-                ticket.title,
-                style: const TextStyle(
-                  color: AppColors.textPrimary,
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
+              if (hasImage) ...[
+                InspectionImageWidget(
+                  imagePath: ticket.imagePath!,
+                  width: 58,
+                  height: 58,
+                  borderRadius: BorderRadius.circular(8),
+                  fit: BoxFit.cover,
                 ),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              ),
-              const SizedBox(height: 4),
-              Row(
-                children: [
-                  const Icon(Icons.place_rounded, color: AppColors.textMuted, size: 13),
-                  const SizedBox(width: 4),
-                  Expanded(
-                    child: Text(
-                      ticket.location,
-                      style: const TextStyle(color: AppColors.textSecondary, fontSize: 12),
+                const SizedBox(width: 12),
+              ],
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        PriorityBadgeChip(priority: ticket.priority),
+                        Row(
+                          children: [
+                            if (hasAudio) ...[
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                margin: const EdgeInsets.only(right: 6),
+                                decoration: BoxDecoration(
+                                  color: AppColors.primary.withValues(alpha: 0.1),
+                                  borderRadius: BorderRadius.circular(6),
+                                ),
+                                child: const Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Icon(Icons.mic_rounded, size: 11, color: AppColors.primary),
+                                    SizedBox(width: 2),
+                                    Text('Voice', style: TextStyle(fontSize: 10, color: AppColors.primary, fontWeight: FontWeight.bold)),
+                                  ],
+                                ),
+                              ),
+                            ],
+                            Icon(
+                              ticket.isSynced ? Icons.cloud_done_rounded : Icons.cloud_upload_outlined,
+                              size: 14,
+                              color: ticket.isSynced ? AppColors.statusSynced : AppColors.statusPending,
+                            ),
+                            const SizedBox(width: 4),
+                            Text(
+                              ticket.isSynced ? 'Đã sync' : 'Chờ sync',
+                              style: TextStyle(
+                                fontSize: 11,
+                                color: ticket.isSynced ? AppColors.statusSynced : AppColors.statusPending,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      ticket.title,
+                      style: const TextStyle(
+                        color: AppColors.textPrimary,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                      ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
-                  ),
-                  Text(
-                    DateFormatter.formatTimeAgo(ticket.createdAt),
-                    style: const TextStyle(color: AppColors.textMuted, fontSize: 11),
-                  ),
-                ],
+                    const SizedBox(height: 4),
+                    Row(
+                      children: [
+                        const Icon(Icons.place_rounded, color: AppColors.textMuted, size: 13),
+                        const SizedBox(width: 4),
+                        Expanded(
+                          child: Text(
+                            ticket.location,
+                            style: const TextStyle(color: AppColors.textSecondary, fontSize: 12),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        Text(
+                          DateFormatter.formatTimeAgo(ticket.createdAt),
+                          style: const TextStyle(color: AppColors.textMuted, fontSize: 11),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
               ),
             ],
           ),

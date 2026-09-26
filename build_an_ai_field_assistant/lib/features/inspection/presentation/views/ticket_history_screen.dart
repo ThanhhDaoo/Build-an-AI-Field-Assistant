@@ -4,6 +4,7 @@ import '../../../../core/utils/date_formatter.dart';
 import '../../../../core/utils/dialog_helper.dart';
 import '../../domain/entities/inspection_ticket.dart';
 import '../controllers/inspection_controller.dart';
+import '../widgets/inspection_image_widget.dart';
 import '../widgets/priority_badge_chip.dart';
 import 'ticket_review_screen.dart';
 
@@ -238,13 +239,31 @@ class TicketHistoryScreen extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Priority Badge + Sync Status
+                // Priority Badge + Voice + Sync Status
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     PriorityBadgeChip(priority: ticket.priority),
                     Row(
                       children: [
+                        if (ticket.audioPath != null && ticket.audioPath!.isNotEmpty) ...[
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                            margin: const EdgeInsets.only(right: 6),
+                            decoration: BoxDecoration(
+                              color: AppColors.primary.withValues(alpha: 0.1),
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                            child: const Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(Icons.mic_rounded, size: 11, color: AppColors.primary),
+                                SizedBox(width: 2),
+                                Text('Voice', style: TextStyle(fontSize: 10, color: AppColors.primary, fontWeight: FontWeight.bold)),
+                              ],
+                            ),
+                          ),
+                        ],
                         Icon(
                           ticket.isSynced
                               ? Icons.cloud_done_rounded
@@ -272,34 +291,52 @@ class TicketHistoryScreen extends StatelessWidget {
 
                 const SizedBox(height: 10),
 
-                // Title
-                Text(
-                  ticket.title,
-                  style: const TextStyle(
-                    color: AppColors.textPrimary,
-                    fontSize: 14.5,
-                    fontWeight: FontWeight.bold,
-                  ),
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                ),
-
-                const SizedBox(height: 6),
-
-                // Location
                 Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Icon(Icons.place_rounded, color: AppColors.textMuted, size: 14),
-                    const SizedBox(width: 4),
+                    if (ticket.imagePath != null && ticket.imagePath!.isNotEmpty) ...[
+                      InspectionImageWidget(
+                        imagePath: ticket.imagePath!,
+                        width: 64,
+                        height: 64,
+                        borderRadius: BorderRadius.circular(8),
+                        fit: BoxFit.cover,
+                      ),
+                      const SizedBox(width: 12),
+                    ],
                     Expanded(
-                      child: Text(
-                        ticket.location,
-                        style: const TextStyle(
-                          color: AppColors.textSecondary,
-                          fontSize: 12,
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            ticket.title,
+                            style: const TextStyle(
+                              color: AppColors.textPrimary,
+                              fontSize: 14.5,
+                              fontWeight: FontWeight.bold,
+                            ),
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          const SizedBox(height: 6),
+                          Row(
+                            children: [
+                              const Icon(Icons.place_rounded, color: AppColors.textMuted, size: 14),
+                              const SizedBox(width: 4),
+                              Expanded(
+                                child: Text(
+                                  ticket.location,
+                                  style: const TextStyle(
+                                    color: AppColors.textSecondary,
+                                    fontSize: 12,
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
                       ),
                     ),
                   ],

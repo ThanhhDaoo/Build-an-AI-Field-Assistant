@@ -5,6 +5,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:record/record.dart';
 import '../errors/exceptions.dart';
+import '../utils/media_persistence_helper.dart';
 
 /// Supported audio export formats for field recordings
 enum AudioOutputFormat {
@@ -173,7 +174,11 @@ class AudioRecorderService {
       if (!_isRecording) return _lastRecordedPath;
 
       final path = await _audioRecorder.stop();
-      _lastRecordedPath = path ?? _currentRecordingPath;
+      String? finalPath = path ?? _currentRecordingPath;
+      if (finalPath != null && finalPath.isNotEmpty) {
+        finalPath = await MediaPersistenceHelper.persistAudio(finalPath);
+      }
+      _lastRecordedPath = finalPath;
       _isRecording = false;
       _cleanupTimers();
 

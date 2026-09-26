@@ -1,12 +1,12 @@
-import 'dart:io';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/errors/exceptions.dart';
 import '../../../../core/utils/dialog_helper.dart';
+import '../../../../core/utils/media_persistence_helper.dart';
 import '../controllers/inspection_controller.dart';
 import '../widgets/in_app_sync_banner.dart';
+import '../widgets/inspection_image_widget.dart';
 import '../widgets/permission_dialog.dart';
 import '../widgets/wave_record_button.dart';
 import 'ticket_review_screen.dart';
@@ -72,7 +72,8 @@ class _VoiceCaptureScreenState extends State<VoiceCaptureScreen> {
         imageQuality: 85,
       );
       if (pickedFile != null) {
-        widget.controller.setSelectedImagePath(pickedFile.path);
+        final persistentPath = await MediaPersistenceHelper.persistImage(pickedFile);
+        widget.controller.setSelectedImagePath(persistentPath);
       }
     } catch (e) {
       debugPrint('Lỗi tải ảnh: $e');
@@ -87,22 +88,7 @@ class _VoiceCaptureScreenState extends State<VoiceCaptureScreen> {
   }
 
   Widget _buildImageWidget(String path, {BoxFit fit = BoxFit.cover}) {
-    if (kIsWeb || path.startsWith('http')) {
-      return Image.network(
-        path,
-        fit: fit,
-        errorBuilder: (_, _, _) => const Center(
-          child: Icon(Icons.broken_image_rounded, color: AppColors.textMuted, size: 20),
-        ),
-      );
-    }
-    return Image.file(
-      File(path),
-      fit: fit,
-      errorBuilder: (_, _, _) => const Center(
-        child: Icon(Icons.broken_image_rounded, color: AppColors.textMuted, size: 20),
-      ),
-    );
+    return InspectionImageWidget(imagePath: path, fit: fit);
   }
 
   void _showFullScreenImage(BuildContext context, String path) {

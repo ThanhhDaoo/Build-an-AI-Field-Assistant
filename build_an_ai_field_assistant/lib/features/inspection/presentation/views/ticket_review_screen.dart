@@ -1,7 +1,5 @@
 import 'dart:async';
-import 'dart:io';
 import 'package:audioplayers/audioplayers.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../../../core/constants/app_colors.dart';
@@ -10,9 +8,11 @@ import '../../../../core/di/injection_container.dart';
 import '../../../../core/services/audio_player_service.dart';
 import '../../../../core/utils/date_formatter.dart';
 import '../../../../core/utils/dialog_helper.dart';
+import '../../../../core/utils/media_persistence_helper.dart';
 import '../../domain/entities/inspection_ticket.dart';
 import '../controllers/inspection_controller.dart';
 import '../widgets/in_app_sync_banner.dart';
+import '../widgets/inspection_image_widget.dart';
 import '../widgets/swipe_to_submit_btn.dart';
 
 /// Clean Enterprise Field Inspection Report Review Form
@@ -341,7 +341,8 @@ class _TicketReviewScreenState extends State<TicketReviewScreen> {
         imageQuality: 85,
       );
       if (pickedFile != null) {
-        setState(() => _currentImagePath = pickedFile.path);
+        final persistentPath = await MediaPersistenceHelper.persistImage(pickedFile);
+        setState(() => _currentImagePath = persistentPath);
       }
     } catch (e) {
       debugPrint('Lỗi chọn/chụp ảnh: $e');
@@ -356,22 +357,7 @@ class _TicketReviewScreenState extends State<TicketReviewScreen> {
   }
 
   Widget _buildImageWidget(String path, {BoxFit fit = BoxFit.cover}) {
-    if (kIsWeb || path.startsWith('http')) {
-      return Image.network(
-        path,
-        fit: fit,
-        errorBuilder: (_, _, _) => const Center(
-          child: Icon(Icons.broken_image_rounded, color: AppColors.textMuted, size: 24),
-        ),
-      );
-    }
-    return Image.file(
-      File(path),
-      fit: fit,
-      errorBuilder: (_, _, _) => const Center(
-        child: Icon(Icons.broken_image_rounded, color: AppColors.textMuted, size: 24),
-      ),
-    );
+    return InspectionImageWidget(imagePath: path, fit: fit);
   }
 
   void _showFullScreenImage(BuildContext context, String path) {

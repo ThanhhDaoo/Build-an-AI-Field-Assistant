@@ -8,6 +8,7 @@ import '../../../../core/constants/api_endpoints.dart';
 import '../../../../core/constants/app_constants.dart';
 import '../../../../core/errors/exceptions.dart';
 import '../../../../core/network/api_client.dart';
+import '../../../../core/utils/media_persistence_helper.dart';
 import '../models/inspection_ticket_model.dart';
 
 abstract class IInspectionRemoteDataSource {
@@ -196,7 +197,10 @@ class InspectionRemoteDataSourceImpl implements IInspectionRemoteDataSource {
       Uint8List? audioBytes;
       String audioMime = 'audio/mp4';
 
-      if (!kIsWeb && aFile != null && await aFile.exists()) {
+      if (resolvedAudioPath.startsWith('data:audio')) {
+        audioBytes = MediaPersistenceHelper.decodeAudioBytes(resolvedAudioPath);
+        audioMime = MediaPersistenceHelper.extractMimeType(resolvedAudioPath, fallback: 'audio/mp4');
+      } else if (!kIsWeb && aFile != null && await aFile.exists()) {
         audioBytes = await aFile.readAsBytes();
         final lower = resolvedAudioPath.toLowerCase();
         if (lower.endsWith('.wav')) {
@@ -212,7 +216,10 @@ class InspectionRemoteDataSourceImpl implements IInspectionRemoteDataSource {
 
       Uint8List? imageBytes;
       String imageMime = 'image/jpeg';
-      if (!kIsWeb && imgFile != null && await imgFile.exists()) {
+      if (resolvedImagePath.startsWith('data:image')) {
+        imageBytes = MediaPersistenceHelper.decodeImageBytes(resolvedImagePath);
+        imageMime = MediaPersistenceHelper.extractMimeType(resolvedImagePath, fallback: 'image/jpeg');
+      } else if (!kIsWeb && imgFile != null && await imgFile.exists()) {
         imageBytes = await imgFile.readAsBytes();
         final lower = resolvedImagePath.toLowerCase();
         if (lower.endsWith('.png')) {
