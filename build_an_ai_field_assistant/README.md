@@ -1,10 +1,10 @@
-# 🛠️ Field AI Assistant (Trợ Lý Giám Sát & Báo Cáo Hiện Trường AI)
+# Field AI Assistant (Trợ Lý Giám Sát & Báo Cáo Hiện Trường AI)
 
 > **Hệ thống di động & web đa nền tảng (Flutter + Gemini Multimodal AI + SQLite Offline-First)** hỗ trợ kỹ sư, giám sát viên công trường, nhà máy tiếp nhận sự cố bằng giọng nói, tự động trích xuất thành phiếu kiểm tra JSON chuẩn hóa, lưu trữ bền bỉ khi mất mạng và tự động đồng bộ lên đám mây khi có kết nối 4G/Wifi.
 
 ---
 
-## 1. 📌 Vấn Đề Thực Tiễn (Problem Statement)
+## 1. Vấn Đề Thực Tiễn (Problem Statement)
 
 Tại các môi trường công nghiệp nặng, công trường xây dựng, phân xưởng luyện kim, nhà máy hóa chất và hầm mỏ:
 1. **Rào cản môi trường & thao tác**: Tiếng ồn máy móc lớn, bụi bẩn, kỹ sư bắt buộc phải mang găng tay bảo hộ lao động dày. Việc gõ bàn phím ảo hoặc thao tác trên màn hình cảm ứng điện thoại là cực kỳ bất tiện, tốn thời gian và dễ bấm nhầm.
@@ -13,15 +13,15 @@ Tại các môi trường công nghiệp nặng, công trường xây dựng, ph
 
 ---
 
-## 2. 💡 Giải Pháp Công Nghệ (Solution)
+## 2. Giải Pháp Công Nghệ (Solution)
 
 **Field AI Assistant** được thiết kế chuyên biệt để giải quyết triệt để 3 vấn đề trên thông qua sự kết hợp giữa **Voice-first Interface**, **Gemini Multimodal AI** và **Offline-First Architecture**:
 
-### 🎙️ 2.1. Nhập Liệu Bằng Giọng Nói & Bóc Băng Thời Gian Thực (Live STT)
+### 2.1. Nhập Liệu Bằng Giọng Nói & Bóc Băng Thời Gian Thực (Live STT)
 - Kỹ sư chỉ cần nhấn nút micro kích thước lớn và nói tự nhiên mô tả hiện trạng (Ví dụ: *"Tại Phân xưởng cán thép 2 phát hiện van dầu áp lực cao bị nứt gioăng, dầu rỉ tràn sàn có nguy cơ trượt té, cần 2 gioăng chịu dầu DN50 thay thế gấp"*).
 - Tích hợp động cơ nhận diện giọng nói tiếng Việt thiết bị (`SpeechToTextService`), hiển thị văn bản bóc băng từng từ trực tiếp ngay trong khi nói.
 
-### 🤖 2.2. Trích Xuất Dữ Liệu Có Cấu Trúc Bằng Gemini 1.5 Flash (Multimodal)
+### 2.2. Trích Xuất Dữ Liệu Có Cấu Trúc Bằng Gemini 1.5 Flash (Multimodal)
 - File âm thanh nhị phân (`.m4a` / `.wav`) được truyền trực tiếp lên **Google Gemini 1.5 Flash Multimodal** cùng System Instruction chuẩn hóa.
 - Mô hình tự động bóc tách và trả về JSON chuẩn xác không chứa markdown block:
   - **Mã thiết bị / Phương tiện**: Bóc tách tự động (VD: `ELEC-04`, `PUMP-01`, `XL-204`...).
@@ -30,25 +30,25 @@ Tại các môi trường công nghiệp nặng, công trường xây dựng, ph
   - **Danh mục vật tư / linh kiện (+/-)**: Bóc tách tên linh kiện và số lượng cần dùng, kèm bộ nút tăng giảm nhanh `+` / `-`.
   - **Bộ Multi-tier Fallback**: 4 tầng bảo vệ (Network Fallback, JSON Clean Regex, Quota Fallback, Local Smart NLP Heuristic) đảm bảo ứng dụng **hoạt động thông suốt 100%, tuyệt đối không bao giờ crash ngay cả khi mất mạng hoặc không có API Key**.
 
-### 💾 2.3. Lưu Trữ Ngoại Tuyến (Offline-First) & Tự Động Đồng Bộ (Background Auto-Sync)
+### 2.3. Lưu Trữ Ngoại Tuyến (Offline-First) & Tự Động Đồng Bộ (Background Auto-Sync)
 - Lưu trữ toàn bộ dữ liệu vào cơ sở dữ liệu SQLite (`sqflite`) trên thiết bị di động với cột trạng thái: `status: 'synced' | 'pending'`.
 - Khi có mạng: Gửi phiếu lên máy chủ -> Gán trạng thái `synced` -> Lưu SQLite.
 - Khi mất mạng: Tự động bẫy lỗi an toàn -> Lưu vào SQLite với trạng thái `pending` và hiển thị nhãn `☁ Chờ sync`.
 - Dịch vụ giám sát mạng (`ConnectivityService`): Tự động lắng nghe thay đổi trạng thái kết nối. Khi phát hiện 4G/Wifi được phục hồi, hệ thống **tự động quét và gửi lại toàn bộ phiếu chờ đồng bộ lên server trong nền**, chuyển trạng thái thành `☁ Đã sync` mà không cần người dùng thao tác.
 
-### 🛡️ 2.4. Thiết Kế Công Nghiệp & Công Thái Học (Industrial Ergonomics)
+### 2.4. Thiết Kế Công Nghiệp & Công Thái Học (Industrial Ergonomics)
 - **Industrial Dark Theme**: Nền tối cao cấp (`#0B1120`, `#151E32`), độ tương phản cao, tối ưu hiển thị dưới ánh sáng mạnh ngoài trời và tiết kiệm pin AMOLED.
 - **Nút Micro trung tâm lớn (88px)**: Đặt tại vị trí công thái học ngón cái, hiệu ứng chuyển màu mượt mà từ Xanh ngọc (`#10B981`) sang Đỏ cảnh báo (`#EF4444`) kèm sóng radar lan tỏa đa tầng.
 - **Timer HUD Kỹ thuật số**: Đồng hồ đếm giây ghi âm chính xác kèm chấm đỏ nhấp nháy `● REC`.
 - **Nút trượt công nghiệp (Swipe-To-Submit)**: Cơ chế trượt xác nhận "Vuốt để duyệt & gửi biên bản >>" loại bỏ 100% rủi ro vô tình bấm nhầm khi kỹ sư đang mang găng tay bảo hộ.
 
-### 📍 2.5. Điểm Thưởng: Định Vị GPS Hiện Trường & Thông Báo Phản Hồi Đồng Bộ
-- **Định vị GPS 1-chạm (`geolocator: ^13.0.1`)**: Chip `[📍 GPS 1-chạm]` tại màn hình duyệt phiếu và màn hình thu âm cho phép kỹ sư lấy tọa độ phần cứng tức thì, chuẩn hóa dạng `10.7769° N, 106.7009° E (Vị trí GPS)` điền thẳng vào biên bản mà không cần nhập tay.
+### 2.5. Định Vị GPS Hiện Trường & Thông Báo Phản Hồi Đồng Bộ
+- **Định vị GPS 1-chạm (`geolocator: ^13.0.1`)**: Chip `[GPS 1-chạm]` tại màn hình duyệt phiếu và màn hình thu âm cho phép kỹ sư lấy tọa độ phần cứng tức thì, chuẩn hóa dạng `10.7769° N, 106.7009° E (Vị trí GPS)` điền thẳng vào biên bản mà không cần nhập tay.
 - **Thông báo phản hồi đồng bộ ngầm (`InAppSyncBanner` & `SyncNotificationService`)**: Khi hệ thống phục hồi mạng và hoàn tất đồng bộ tự động các biên bản chờ, ứng dụng phát thông báo nổi: `"✓ Đã tự động đồng bộ thành công X phiếu kiểm tra lên máy chủ!"` với hiệu ứng trượt mượt mà và tự động ẩn.
 
 ---
 
-## 3. 🏗️ Kiến Trúc Hệ Thống (Architecture)
+## 3. Kiến Trúc Hệ Thống (Architecture)
 
 Ứng dụng tuân thủ nghiêm ngặt mô hình **Clean Architecture** kết hợp nguyên lý SOLID, phân tách rõ ràng giữa Business Logic, Data Access và Giao diện:
 
@@ -121,7 +121,7 @@ sequenceDiagram
     Note over Engineer,UI: 1. Thu thập dữ liệu hiện trường (Chụp ảnh + Nói + GPS)
     Engineer->>Cam: Chụp ảnh hiện trường thiết bị / hư hỏng
     Cam-->>UI: imagePath (bằng chứng hình ảnh)
-    Engineer->>GPS: Chạm 1-chạm [📍 GPS]
+    Engineer->>GPS: Chạm [GPS 1-chạm]
     GPS-->>UI: 10.7769° N, 106.7009° E (Vị trí GPS)
     Engineer->>STT: Bấm nút Micro 88px nói mô tả sự cố
     STT-->>UI: audioPath (.m4a) + Live transcript
@@ -155,7 +155,7 @@ sequenceDiagram
 
 ---
 
-## 4. ⚠️ Hạn Chế & Hướng Phát Triển Tương Lai (Limitations & Roadmap)
+## 4. Hạn Chế & Định Hướng Phát Triển (Limitations & Roadmap)
 
 ### Hạn Chế Hiện Tại:
 1. **Nền tảng Trình duyệt Web**:
@@ -171,7 +171,7 @@ sequenceDiagram
 
 ---
 
-## 5. 🚀 Hướng Dẫn Cài Đặt, Chạy Thử & Đóng Gói (Build & Deploy)
+## 5. Hướng Dẫn Cài Đặt, Chạy Thử & Đóng Gói (Build & Deploy)
 
 ### 5.1. Yêu Cầu Môi Trường
 - **Flutter SDK**: `>= 3.13.0` (Khuyến nghị Flutter 3.27+ hoặc 3.47+)
@@ -197,7 +197,7 @@ flutter pub get
 
 ### 5.4. Đóng Gói Bản Phát Hành (Production Release Build)
 
-#### 🌐 Đóng Gói & Deploy Bản Web (Vercel / Firebase Hosting):
+#### Đóng Gói & Triển Khai Bản Web (Vercel / Firebase Hosting):
 1. **Build bản Web release**:
    ```bash
    flutter build web --release
@@ -218,7 +218,7 @@ flutter pub get
    firebase deploy --only hosting
    ```
 
-#### 📱 Đóng Gói Bản Cài Đặt Android APK:
+#### Đóng Gói Bản Cài Đặt Android APK:
 1. **Build APK Release**:
    ```bash
    flutter build apk --release
@@ -232,7 +232,7 @@ flutter pub get
 
 ---
 
-## 6. 🧪 Kiểm Thử & Đảm Bảo Chất Lượng Mã Nguồn (QA & Testing)
+## 6. Kiểm Thử & Đảm Bảo Chất Lượng Mã Nguồn (QA & Testing)
 
 Dự án áp dụng quy trình kiểm thử tự động toàn diện với **35 bài test đơn vị (Unit Tests)** bao phủ toàn bộ các tầng nghiệp vụ:
 
@@ -260,23 +260,7 @@ flutter test
 7. `test/phase_7_multimodal_image_test.dart`: Kiểm thử Camera Image Picker, bảo toàn `imagePath`, serialization SQLite v3 và Gemini Multimodal Vision.
 8. `test/phase_8_gps_and_sync_notification_test.dart`: Kiểm thử 1-chạm lấy tọa độ GPS hiện trường (LocationService), chuẩn hóa kinh vĩ độ, SyncNotificationService phát thông báo và In-app Banner phản hồi đồng bộ ngầm tự động.
 
----
-
-## 7. 🧭 Quy Trình Trải Nghiệm & Trình Diễn Tính Năng (Demonstration Walkthrough)
-
-Hướng dẫn các bước trải nghiệm thực tế các tính năng cốt lõi của Field AI Assistant:
-
-| Bước | Tính Năng Trọng Tâm | Mô Tả Thao Tác & Trải Nghiệm Chi Tiết |
-| :---: | :--- | :--- |
-| **0:00 - 0:45** | **1. Bối Cảnh & Bài Toán Thực Tiễn** | - **Mở đầu**: Mở màn hình chính *Field AI Assistant* (Industrial Dark Mode).<br>- **Vấn đề**: Kỹ sư mang găng tay bảo hộ dày, môi trường công xưởng ồn ào, sóng 4G/Wifi chập chờn, biểu mẫu giấy tờ dài dòng gây tốn 15-30 phút/phiếu.<br>- **Giải pháp**: Ứng dụng công nghệ AI Đa phương thức: **"Chụp ảnh → Nói → AI lập biên bản"** hoàn tất chỉ trong 10 giây. |
-| **0:45 - 2:00** | **2. Luồng Vàng Hiện Trường (Golden Flow)** | - **Hành động 1**: Bấm nút **[Chụp ảnh]** → Chụp nhãn thiết bị/sự cố rò rỉ van dầu.<br>- **Hành động 2**: Nhấn nút **Micro 88px**, nói: *"Máy bơm làm mát PUMP-02 tại Phân xưởng cán thép 2 bị nứt gioăng cao su, dầu áp lực rỉ mạnh, nhiệt độ tăng cao. Cần thay 2 gioăng chịu dầu M12 và siết lại mặt bích."*<br>- **Hiệu ứng**: Sóng radar âm thanh chuyển động, Live Speech-to-Text bóc băng trực tiếp.<br>- **Kết quả AI**: Gemini 1.5 Flash Vision Multimodal phân tích đồng thời ảnh + giọng nói, trả về biên bản đầy đủ: Mã `PUMP-02`, Phân loại `Cơ khí`, Ưu tiên `Khẩn cấp`, Danh sách lỗi và Vật tư cần thay. |
-| **2:00 - 3:00** | **3. Chỉnh Sửa Trực Quan, GPS & Swipe-To-Submit** | - **Định vị GPS**: Bấm nút chip **[📍 GPS 1-chạm]** → Tọa độ `10.7769° N, 106.7009° E (Vị trí GPS)` tự động điền vào phiếu.<br>- **Xem bằng chứng**: Chạm vào ảnh hiện trường để zoom phóng to kiểm tra vết nứt.<br>- **Tương tác vật tư**: Bấm `+` / `-` để điều chỉnh nhanh số lượng linh kiện gioăng chịu dầu.<br>- **Xác nhận**: Vuốt thanh trượt **Swipe-to-Submit** "Vuốt để duyệt & gửi biên bản >>" (tránh bấm nhầm khi đeo găng tay). |
-| **3:00 - 4:00** | **4. Xử Lý Ngoại Tuyến (Offline-First) & Tự Động Đồng Bộ** | - **Bật Chế độ máy bay (Airplane mode)** trên máy.<br>- Tạo một biên bản mới → Hệ thống lưu trữ vào SQLite v3 nội bộ với nhãn trạng thái **`☁ Chờ sync`** (màu cam).<br>- **Tắt Chế độ máy bay (Mở lại Wifi/4G)**.<br>- `ConnectivityService` phát hiện mạng phục hồi → Tự động đồng bộ ngầm lên máy chủ.<br>- **Phản hồi**: Banner xanh ngọc **`InAppSyncBanner`** trượt xuống: *"✓ Đã tự động đồng bộ thành công 1 phiếu kiểm tra lên máy chủ!"* và nhãn chuyển sang **`☁ Đã sync`** (màu xanh lá). |
-| **4:00 - 4:45** | **5. Kiến Trúc Mã Nguồn, Unit Tests & Bản Cài Đặt** | - **Kiến trúc**: Show cấu trúc Clean Architecture chuẩn hóa (Domain, Data, Presentation).<br>- **Đảm bảo chất lượng**: Mở terminal chạy `flutter test` (**35/35 tests PASS 100%**) và `flutter analyze` (**0 issues found**).<br>- **Thành phẩm**: Trình diễn file cài đặt độc lập `app-release.apk` (54.6MB) đã tối ưu Proguard, sẵn sàng cài đặt và chạy trên mọi thiết bị Android. |
-
----
-
-## 8. 👥 Tác Giả & Bản Quyền
+## 7. Tác Giả & Bản Quyền
 - **Tác giả phát triển**: **Trần Thanh Đạo** ([@ThanhhDaoo](https://github.com/ThanhhDaoo))
 - Dự án: **Field AI Assistant — Trợ lý Giám sát & Báo cáo Hiện trường AI**
 - Repository: [https://github.com/ThanhhDaoo/Build-an-AI-Field-Assistant](https://github.com/ThanhhDaoo/Build-an-AI-Field-Assistant)

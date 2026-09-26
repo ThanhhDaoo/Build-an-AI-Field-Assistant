@@ -22,7 +22,7 @@
 | **Giai đoạn 5** | **Xử lý Offline-First & Đồng bộ Dữ liệu (SQLite 'synced' / 'pending', Auto-sync ConnectivityService)** | **ĐÃ HOÀN THÀNH** | `88a55fc`, `68f56ec` |
 | **Giai đoạn 6** | **Đóng gói Sản phẩm & Tài liệu Bàn giao (Build Web Release, APK Release, README & AI_WORKLOG)** | **ĐÃ HOÀN THÀNH** | `fef17c3` |
 | **Giai đoạn 7** | **Bổ sung Chụp Ảnh Hiện Trường & Gemini 1.5 Flash Vision Multimodal (Image + Audio/Text)** | **ĐÃ HOÀN THÀNH** | `b0daac0` |
-| **Giai đoạn 8** | **Bổ sung Điểm Thưởng: Định Vị GPS 1-Chạm & Thông Báo Phản Hồi Đồng Bộ Ngầm** | **ĐÃ HOÀN THÀNH** | `74e89a1` |
+| **Giai đoạn 8** | **Tích Hợp Định Vị GPS 1-Chạm & Thông Báo Phản Hồi Đồng Bộ Ngầm** | **ĐÃ HOÀN THÀNH** | `74e89a1` |
 | **Giai đoạn 9** | **Đóng Gói Bản Phát Hành Release Độc Lập (Android APK 54.6MB & Web SPA 23.4s)** | **ĐÃ HOÀN THÀNH** | `13a12d6` |
 | **Giai đoạn 10** | **Hoàn Thiện Hồ Sơ Kỹ Thuật, Quy Trình Vận Hành & Bàn Giao Hệ Thống** | **ĐÃ HOÀN THÀNH** | `HEAD` |
 
@@ -235,7 +235,7 @@
 
 ---
 
-### [x] Giai Đoạn 8: Điểm Thưởng — Định Vị GPS 1-Chạm & Thông Báo Phản Hồi Đồng Bộ Ngầm
+### [x] Giai Đoạn 8: Tích Hợp Định Vị GPS 1-Chạm & Thông Báo Phản Hồi Đồng Bộ Ngầm
 - **8.1. Tích hợp Định Vị GPS Phần Cứng & Khai báo Quyền Hạn**:
   - Tích hợp thư viện `geolocator: ^13.0.1` vào `pubspec.yaml`.
   - Khai báo quyền `android.permission.ACCESS_FINE_LOCATION`, `ACCESS_COARSE_LOCATION` trong `AndroidManifest.xml` và `NSLocationWhenInUseUsageDescription` trong `Info.plist`.
@@ -248,7 +248,7 @@
   - Tạo widget `InAppSyncBanner` (`lib/features/inspection/presentation/widgets/in_app_sync_banner.dart`): Thiết kế màu xanh ngọc công nghiệp (`#064E3B`, viền `#10B981`), hiển thị thông điệp `"✓ Đã tự động đồng bộ thành công X phiếu kiểm tra lên máy chủ!"`, hiệu ứng trượt mượt mà và tự động ẩn sau 4 giây.
   - Tích hợp `InAppSyncBanner` nổi trên đỉnh `MainShellScreen`, `TicketReviewScreen` và `VoiceCaptureScreen`.
 - **8.4. Trải Nghiệm Người Dùng Hiện Trường (Mobile UX)**:
-  - `TicketReviewScreen`: Bổ sung chip `[📍 GPS 1-chạm]` cạnh ô vị trí và nút icon GPS bên trong TextField cho phép kỹ sư 1-chạm lấy ngay tọa độ thời gian thực.
+  - `TicketReviewScreen`: Bổ sung chip `[GPS 1-chạm]` cạnh ô vị trí và nút icon GPS bên trong TextField cho phép kỹ sư 1-chạm lấy ngay tọa độ thời gian thực.
   - `VoiceCaptureScreen`: Bổ sung cụm định vị GPS cho phép kỹ sư gắn vị trí trước/trong khi ghi âm để AI tự động tích hợp tọa độ vào biên bản.
 - **8.5. Kiểm Thử Tự Động Toàn Diện**:
   - Xây dựng bộ test `test/phase_8_gps_and_sync_notification_test.dart` (5 bài test kiểm thử định dạng tọa độ, lấy vị trí, phát thông báo và tương tác controller).
@@ -291,7 +291,7 @@
 
 ---
 
-## 4. 🧰 Danh Mục Công Cụ AI Đã Sử Dụng (AI Tooling & Stack)
+## 4. Danh Mục Công Cụ & Thư Viện Sử Dụng (Technology Stack)
 
 1. **Google Gemini 1.5 Flash (Multimodal Audio & Text Engine)**:
    - Sử dụng qua SDK chính thức `google_generative_ai: ^0.4.6`.
@@ -305,7 +305,7 @@
 
 ---
 
-## 5. 📝 Danh Mục Prompt Hiệu Quả & Kỹ Thuật Prompt Engineering
+## 5. Cấu Trúc Prompt & Kỹ Thuật Trích Xuất Dữ Liệu
 
 ### 5.1. System Extraction Prompt (`assets/prompts/system_extraction_prompt.txt`)
 - **Kỹ thuật áp dụng**: *Role-playing*, *Strict JSON Schema Enforcement*, *Zero-Markdown Guardrail*.
@@ -340,11 +340,11 @@
 
 ---
 
-## 6. 🧠 Các Pha AI Sinh Sai Code / Hallucination & Phương Pháp Tự Refactor
+## 6. Các Tình Huống Ngoại Lệ Kỹ Thuật & Giải Pháp Xử Lý
 
 Trong suốt quá trình phát triển 6 giai đoạn, có **5 pha sai lệch / ảo giác kỹ thuật (Hallucinations & Edge Cases)** từ AI đã được phát hiện và tự refactor triệt để:
 
-### ⚠️ Pha 1: AI Trả Chuỗi JSON Bọc Trong Markdown Block ````json ````
+### 6.1. Tình huống 1: Chuỗi JSON Bị Bọc Trong Markdown Block
 - **Hiện tượng & Nguy cơ**: Mặc dù System Instruction đã yêu cầu JSON thuần, mô hình Gemini đôi khi vẫn tự động thêm khối ````json { ... } ```` hoặc thêm lời chào lịch sự ở đầu. Khi ứng dụng gọi `jsonDecode()`, ứng dụng sẽ crash ngay lập tức với lỗi:
   `FormatException: Unexpected character (at character 1)`.
 - **Phương pháp Tự Refactor**:
@@ -363,7 +363,7 @@ Trong suốt quá trình phát triển 6 giai đoạn, có **5 pha sai lệch / 
      ```
   3. Bổ sung tầng bẫy `FormatException` chuyển sang Local Heuristic NLP fallback, đảm bảo ứng dụng không bao giờ crash.
 
-### ⚠️ Pha 2: SQLite Crash Do Thiếu Cột Khi Nâng Cấp Schema (`no column named equipment_id`)
+### 6.2. Tình huống 2: SQLite Thiếu Cột Khi Nâng Cấp Schema (no column named equipment_id)
 - **Hiện tượng & Nguy cơ**: Khi mở rộng Entity ở Giai đoạn 4 với các trường mới (`equipment_id`, `detected_issues`, `required_parts`), việc sửa câu lệnh `onCreate` chỉ có tác dụng khi cài mới. Các thiết bị / máy ảo đã chạy từ Giai đoạn 1-3 có cơ sở dữ liệu cũ sẽ ném lỗi:
   `DatabaseException: table inspection_tickets has no column named equipment_id`.
 - **Phương pháp Tự Refactor**:
@@ -371,7 +371,7 @@ Trong suốt quá trình phát triển 6 giai đoạn, có **5 pha sai lệch / 
   2. Viết hàm `onUpgrade` thực hiện câu lệnh `ALTER TABLE ADD COLUMN`.
   3. **Cơ chế Auto-healing Runtime**: Trong khối `catch (dbError)` của `saveTicket()`, nếu thông báo lỗi chứa chuỗi `'no column named'`, hệ thống tự động bắt lỗi và thực thi `ALTER TABLE` ngay tức thì, sau đó thực hiện lại thao tác lưu dữ liệu mà người dùng không hề hay biết và không bị mất bản ghi.
 
-### ⚠️ Pha 3: Gradle Build Warning Về Java 8 Source/Target Obsolete
+### 6.3. Tình huống 3: Gradle Build Warning Về Java 8 Source/Target Obsolete
 - **Hiện tượng**: Khi biên dịch ứng dụng Android trên máy sử dụng JDK 17 / JDK 21, Gradle đưa ra các cảnh báo lỗi thời:
   `warning: [options] source/target value 8 is obsolete and will be removed in a future release`.
 - **Phương pháp Tự Refactor**:
@@ -383,13 +383,13 @@ Trong suốt quá trình phát triển 6 giai đoạn, có **5 pha sai lệch / 
      ```
   2. Triệt tiêu hoàn toàn cảnh báo, đảm bảo quy trình build sạch 100%.
 
-### ⚠️ Pha 4: Xung Đột Touch Target Và Cử Chỉ Điều Hướng Hệ Thống (Android System Gestures)
+### 6.4. Tình huống 4: Xung Đột Touch Target Và Cử Chỉ Điều Hướng Hệ Thống
 - **Hiện tượng**: Nút trượt công nghiệp `SwipeToSubmitButton` được đặt ở đáy màn hình. Khi người dùng vuốt trên các thiết bị Android 15/16/17 sử dụng cử chỉ Gesture Navigation, cử chỉ vuốt ngang dễ bị hệ điều hành nhận diện nhầm thành cử chỉ Back hoặc chuyển ứng dụng.
 - **Phương pháp Tự Refactor**:
   1. Bọc container nút trượt trong `SafeArea(bottom: true)`.
   2. Thêm khoảng đệm tối thiểu `EdgeInsets.only(bottom: 16)` và giới hạn cử chỉ vuốt ngang bằng `PanUpdateDetails.delta.dx`, chỉ kích hoạt khi kéo một mạch trên 80% chiều dài rãnh trượt.
 
-### ⚠️ Pha 5: Xung Đột Khởi Tạo Binding Trong Unit Test (`Binding has not yet been initialized`)
+### 6.5. Tình huống 5: Xung Đột Khởi Tạo Binding Trong Unit Test
 - **Hiện tượng**: `ConnectivityService` tự động gọi `_connectivity.checkConnectivity()` và `_connectivity.onConnectivityChanged.listen()` ngay trong constructor. Khi chạy kiểm thử đơn vị độc lập không có Flutter Engine, test runner báo lỗi:
   `Binding has not yet been initialized. Typically, this is done by calling WidgetsFlutterBinding.ensureInitialized()`.
 - **Phương pháp Tự Refactor**:
@@ -399,7 +399,7 @@ Trong suốt quá trình phát triển 6 giai đoạn, có **5 pha sai lệch / 
 
 ---
 
-## 7. 📁 Cấu Trúc Cây Thư Mục Dự Án (Project Structure)
+## 7. Cấu Trúc Cây Thư Mục Dự Án (Project Structure)
 
 ```
 build_an_ai_field_assistant/
@@ -486,7 +486,7 @@ build_an_ai_field_assistant/
 
 ---
 
-## 8. 📊 Báo Cáo Chất Lượng Mã Nguồn & Đóng Gói (Production Verification)
+## 8. Báo Cáo Chất Lượng Mã Nguồn & Đóng Gói (Production Verification)
 
 ### 8.1. Phân Tích Tĩnh Cú Pháp (Static Linter Analysis)
 ```bash
@@ -519,7 +519,7 @@ flutter build apk --release
 
 ---
 
-## 9. 📜 Lịch Sử Commit & Đồng Bộ Mã Nguồn Git
+## 9. Lịch Sử Commit & Đồng Bộ Mã Nguồn Git
 
 | Commit Hash | Giai đoạn | Mô Tả Chi Tiết Commit |
 | :--- | :---: | :--- |
@@ -541,10 +541,10 @@ flutter build apk --release
 
 ---
 
-## 10. 🎯 Kết Luận & Bàn Giao
+## 10. Kết Luận & Bàn Giao Hệ Thống
 Hệ thống **Field AI Assistant** đã hoàn thiện toàn diện 100% tất cả 10 giai đoạn phát triển theo đúng chuẩn công nghiệp và yêu cầu khắt khe của nhà tuyển dụng. Ứng dụng đáp ứng trọn vẹn mọi tiêu chí:
 1. **Kiến trúc Chuẩn mực (Clean Architecture)**: Tách bạch tuyệt đối giữa Domain, Data và Presentation layers.
 2. **Quy trình Hiện trường Tối ưu**: "Chụp ảnh → Nói → Gemini Vision Multimodal tạo báo cáo có cấu trúc JSON".
-3. **Tính năng Thưởng Xuất sắc**: Định vị GPS 1-chạm độ chính xác cao và Hệ thống Banner thông báo phản hồi đồng bộ ngầm thời gian thực.
+3. **Mở Rộng Tính Năng Vận Hành**: Định vị GPS 1-chạm độ chính xác cao và Hệ thống Banner thông báo phản hồi đồng bộ ngầm thời gian thực.
 4. **Nền tảng Ngoại tuyến Bền vững (Offline-First)**: Lưu trữ SQLite v3 với cơ chế Auto-healing tự phục hồi, tự động đồng bộ khi có mạng 4G/Wifi.
 5. **Độ Tin Cậy Tuyệt Đối**: 35/35 bài kiểm thử đơn vị tự động PASS 100%, 0 lỗi tĩnh linter, bộ cài đặt Android APK độc lập 54.6MB sẵn sàng trên mọi thiết bị.
