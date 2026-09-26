@@ -473,128 +473,272 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
   }
 
   Widget _buildHeader(bool isDesktop, List<InspectionTicket> currentFiltered) {
+    if (isDesktop) {
+      return Container(
+        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+        decoration: const BoxDecoration(
+          color: AppColors.surface,
+          border: Border(
+            bottom: BorderSide(color: AppColors.cardBorder, width: 1),
+          ),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            // Left: Back button + Icon + Title & Subtitle
+            Row(
+              children: [
+                IconButton(
+                  icon: const Icon(Icons.arrow_back_rounded, color: AppColors.textSecondary, size: 20),
+                  tooltip: 'Trở về Chế độ Kỹ sư Hiện trường',
+                  onPressed: () {
+                    if (widget.onSwitchToFieldMode != null) {
+                      widget.onSwitchToFieldMode!();
+                    } else {
+                      Navigator.of(context).maybePop();
+                    }
+                  },
+                ),
+                const SizedBox(width: 4),
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: AppColors.primary.withValues(alpha: 0.15),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: const Icon(Icons.admin_panel_settings_rounded, color: AppColors.primary, size: 22),
+                ),
+                const SizedBox(width: 12),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        const Text(
+                          'Trung tâm Điều độ',
+                          style: TextStyle(
+                            color: AppColors.textPrimary,
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                          decoration: BoxDecoration(
+                            color: AppColors.primary.withValues(alpha: 0.1),
+                            borderRadius: BorderRadius.circular(6),
+                            border: Border.all(color: AppColors.primary.withValues(alpha: 0.25), width: 1),
+                          ),
+                          child: const Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(Icons.shield_outlined, size: 12, color: AppColors.primary),
+                              SizedBox(width: 4),
+                              Text(
+                                'QUẢN ĐỐC',
+                                style: TextStyle(
+                                  color: AppColors.primary,
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.bold,
+                                  letterSpacing: 0.4,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 2),
+                    const Text(
+                      'Giám sát sự cố, phân công bảo dưỡng & báo cáo hiện trường',
+                      style: TextStyle(color: AppColors.textMuted, fontSize: 11),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+
+            // Right: Field Mode Switch & Export Buttons
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (widget.onSwitchToFieldMode != null)
+                  OutlinedButton.icon(
+                    onPressed: widget.onSwitchToFieldMode,
+                    icon: const Icon(Icons.engineering_outlined, size: 16),
+                    label: const Text('Kỹ sư hiện trường', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: AppColors.textPrimary,
+                      side: const BorderSide(color: AppColors.cardBorder),
+                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                      minimumSize: const Size(0, 38),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                    ),
+                  ),
+                const SizedBox(width: 10),
+                ElevatedButton.icon(
+                  onPressed: _isExporting ? null : () => _handleExportCsv(currentFiltered),
+                  icon: _isExporting
+                      ? const SizedBox(
+                          width: 14,
+                          height: 14,
+                          child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                        )
+                      : const Icon(Icons.file_download_outlined, size: 16),
+                  label: Text(
+                    _isExporting ? 'Đang xuất...' : 'Xuất CSV / Excel',
+                    style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+                  ),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.primary,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                    minimumSize: const Size(0, 38),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      );
+    }
+
+    // Mobile layout: Dedicated 2-tier balanced header
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: const BoxDecoration(
         color: AppColors.surface,
         border: Border(
           bottom: BorderSide(color: AppColors.cardBorder, width: 1),
         ),
       ),
-      child: Wrap(
-        alignment: WrapAlignment.spaceBetween,
-        crossAxisAlignment: WrapCrossAlignment.center,
-        spacing: 12,
-        runSpacing: 10,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // Row 1: Back button + Title & Tag + Subtitle (clean, no overflow)
           Row(
-            mainAxisSize: MainAxisSize.min,
             children: [
-              IconButton(
-                icon: const Icon(Icons.arrow_back_rounded, color: AppColors.textSecondary, size: 20),
-                tooltip: 'Trở về Chế độ Kỹ sư Hiện trường',
-                onPressed: () {
-                  if (widget.onSwitchToFieldMode != null) {
-                    widget.onSwitchToFieldMode!();
-                  } else {
-                    Navigator.of(context).maybePop();
-                  }
-                },
-              ),
-              const SizedBox(width: 4),
-              Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: AppColors.primary.withValues(alpha: 0.15),
+              Tooltip(
+                message: 'Trở về Chế độ Kỹ sư Hiện trường',
+                child: InkWell(
+                  onTap: () {
+                    if (widget.onSwitchToFieldMode != null) {
+                      widget.onSwitchToFieldMode!();
+                    } else {
+                      Navigator.of(context).maybePop();
+                    }
+                  },
                   borderRadius: BorderRadius.circular(10),
+                  child: Container(
+                    width: 36,
+                    height: 36,
+                    decoration: BoxDecoration(
+                      color: AppColors.surfaceLight,
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: AppColors.cardBorder, width: 1),
+                    ),
+                    child: const Center(
+                      child: Icon(Icons.arrow_back_rounded, color: AppColors.textPrimary, size: 18),
+                    ),
+                  ),
                 ),
-                child: const Icon(Icons.admin_panel_settings_rounded, color: AppColors.primary, size: 22),
               ),
-              const SizedBox(width: 12),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      const Text(
-                        'Trung tâm Điều độ',
-                        style: TextStyle(
-                          color: AppColors.textPrimary,
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Row(
+                      children: [
+                        const Text(
+                          'Trung tâm Điều độ',
+                          style: TextStyle(
+                            color: AppColors.textPrimary,
+                            fontSize: 15,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
-                      ),
-                      const SizedBox(width: 8),
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                        decoration: BoxDecoration(
-                          color: AppColors.primary.withValues(alpha: 0.1),
-                          borderRadius: BorderRadius.circular(6),
-                          border: Border.all(color: AppColors.primary.withValues(alpha: 0.25), width: 1),
-                        ),
-                        child: const Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(Icons.shield_outlined, size: 12, color: AppColors.primary),
-                            SizedBox(width: 4),
-                            Text(
-                              'QUẢN ĐỐC',
-                              style: TextStyle(
-                                color: AppColors.primary,
-                                fontSize: 10,
-                                fontWeight: FontWeight.bold,
-                                letterSpacing: 0.4,
-                              ),
+                        const SizedBox(width: 8),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: AppColors.primary.withValues(alpha: 0.12),
+                            borderRadius: BorderRadius.circular(6),
+                            border: Border.all(color: AppColors.primary.withValues(alpha: 0.25), width: 1),
+                          ),
+                          child: const Text(
+                            'QUẢN ĐỐC',
+                            style: TextStyle(
+                              color: AppColors.primary,
+                              fontSize: 9.5,
+                              fontWeight: FontWeight.bold,
+                              letterSpacing: 0.4,
                             ),
-                          ],
+                          ),
                         ),
-                      ),
-                    ],
-                  ),
-                  const Text(
-                    'Giám sát sự cố, phân công bảo dưỡng & báo cáo hiện trường',
-                    style: TextStyle(color: AppColors.textMuted, fontSize: 11),
-                  ),
-                ],
+                      ],
+                    ),
+                    const SizedBox(height: 2),
+                    const Text(
+                      'Giám sát sự cố & Phân công bảo dưỡng',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(color: AppColors.textMuted, fontSize: 11),
+                    ),
+                  ],
+                ),
               ),
             ],
           ),
+          const SizedBox(height: 12),
 
-          // Actions: Switch to Field Mode & Export Report
+          // Row 2: Perfectly balanced 50/50 action buttons
           Row(
-            mainAxisSize: MainAxisSize.min,
             children: [
-              if (widget.onSwitchToFieldMode != null)
-                OutlinedButton.icon(
-                  onPressed: widget.onSwitchToFieldMode,
-                  icon: const Icon(Icons.engineering_outlined, size: 16),
-                  label: const Text('Kỹ sư hiện trường', style: TextStyle(fontSize: 12)),
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: AppColors.textSecondary,
-                    side: const BorderSide(color: AppColors.cardBorder),
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+              if (widget.onSwitchToFieldMode != null) ...[
+                Expanded(
+                  child: OutlinedButton.icon(
+                    onPressed: widget.onSwitchToFieldMode,
+                    icon: const Icon(Icons.engineering_outlined, size: 16),
+                    label: const Text(
+                      'Kỹ sư hiện trường',
+                      style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+                    ),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: AppColors.textPrimary,
+                      side: const BorderSide(color: AppColors.cardBorder),
+                      padding: const EdgeInsets.symmetric(vertical: 9),
+                      minimumSize: const Size(0, 38),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                    ),
                   ),
                 ),
-              const SizedBox(width: 8),
-              ElevatedButton.icon(
-                onPressed: _isExporting ? null : () => _handleExportCsv(currentFiltered),
-                icon: _isExporting
-                    ? const SizedBox(
-                        width: 14,
-                        height: 14,
-                        child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
-                      )
-                    : const Icon(Icons.file_download_outlined, size: 16),
-                label: Text(
-                  _isExporting ? 'Đang xuất...' : 'Xuất CSV / Excel',
-                  style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
-                ),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.primary,
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                const SizedBox(width: 10),
+              ],
+              Expanded(
+                child: ElevatedButton.icon(
+                  onPressed: _isExporting ? null : () => _handleExportCsv(currentFiltered),
+                  icon: _isExporting
+                      ? const SizedBox(
+                          width: 14,
+                          height: 14,
+                          child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                        )
+                      : const Icon(Icons.file_download_outlined, size: 16),
+                  label: Text(
+                    _isExporting ? 'Đang xuất...' : 'Xuất CSV / Excel',
+                    style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+                  ),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.primary,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 9),
+                    minimumSize: const Size(0, 38),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                  ),
                 ),
               ),
             ],
