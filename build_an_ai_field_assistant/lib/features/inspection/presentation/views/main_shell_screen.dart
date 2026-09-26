@@ -448,113 +448,126 @@ class _DashboardTabViewState extends State<_DashboardTabView> {
             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
             child: Row(
               children: [
-                // Inspector Avatar
-                Container(
-                  width: 42,
-                  height: 42,
-                  decoration: BoxDecoration(
-                    color: AppColors.surfaceLight,
-                    shape: BoxShape.circle,
-                    border: Border.all(color: AppColors.cardBorder),
-                  ),
-                  child: const Center(
-                    child: Icon(Icons.person_rounded, color: AppColors.primary, size: 24),
+                // Inspector Avatar with Status Badge
+                Tooltip(
+                  message: ctrl.isOnline ? 'Hệ thống: Trực tuyến (Online)' : 'Hệ thống: Ngoại tuyến (Offline)',
+                  child: Stack(
+                    clipBehavior: Clip.none,
+                    children: [
+                      Container(
+                        width: 40,
+                        height: 40,
+                        decoration: BoxDecoration(
+                          color: AppColors.surfaceLight,
+                          shape: BoxShape.circle,
+                          border: Border.all(color: AppColors.cardBorder),
+                        ),
+                        child: const Center(
+                          child: Icon(Icons.person_rounded, color: AppColors.primary, size: 22),
+                        ),
+                      ),
+                      Positioned(
+                        right: 0,
+                        bottom: 0,
+                        child: Container(
+                          width: 10,
+                          height: 10,
+                          decoration: BoxDecoration(
+                            color: ctrl.isOnline ? AppColors.primary : AppColors.statusPending,
+                            shape: BoxShape.circle,
+                            border: Border.all(color: AppColors.background, width: 2),
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
                 const SizedBox(width: 12),
-                const Expanded(
+
+                // Inspector Title & Role Description (Clean 1-line presentation)
+                Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
                     children: [
-                      Text(
+                      const Text(
                         'Kỹ sư hiện trường',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                         style: TextStyle(
                           color: AppColors.textPrimary,
                           fontSize: 15,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
-                      SizedBox(height: 2),
+                      const SizedBox(height: 2),
                       Text(
-                        'Giám sát & Quản lý thiết bị',
-                        style: TextStyle(color: AppColors.textMuted, fontSize: 11),
-                      ),
-                    ],
-                  ),
-                ),
-
-                // Online/Offline status pill
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: ctrl.isOnline
-                        ? AppColors.primary.withValues(alpha: 0.15)
-                        : AppColors.statusPending.withValues(alpha: 0.15),
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(
-                      color: ctrl.isOnline ? AppColors.primary : AppColors.statusPending,
-                      width: 1,
-                    ),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Container(
-                        width: 6,
-                        height: 6,
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          color: ctrl.isOnline ? AppColors.primary : AppColors.statusPending,
-                        ),
-                      ),
-                      const SizedBox(width: 5),
-                      Text(
-                        ctrl.isOnline ? 'Online' : 'Offline',
+                        ctrl.isOnline ? 'Trực tuyến · Giám sát thiết bị' : 'Ngoại tuyến · Giám sát thiết bị',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                         style: TextStyle(
-                          color: ctrl.isOnline ? AppColors.primary : AppColors.statusPending,
+                          color: ctrl.isOnline ? AppColors.textMuted : AppColors.statusPending,
                           fontSize: 11,
-                          fontWeight: FontWeight.bold,
                         ),
                       ),
                     ],
                   ),
                 ),
-                const SizedBox(width: 6),
+                const SizedBox(width: 10),
 
                 // Role switch: Quản đốc button
-                InkWell(
-                  onTap: widget.onNavigateToAdmin,
-                  borderRadius: BorderRadius.circular(8),
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                    decoration: BoxDecoration(
-                      color: AppColors.primary.withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: AppColors.primary.withValues(alpha: 0.3), width: 1),
-                    ),
-                    child: const Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(Icons.shield_outlined, size: 14, color: AppColors.primary),
-                        SizedBox(width: 5),
-                        Text(
-                          'Quản đốc',
-                          style: TextStyle(
-                            color: AppColors.primary,
-                            fontSize: 11.5,
-                            fontWeight: FontWeight.bold,
+                Tooltip(
+                  message: 'Chuyển sang bảng điều khiển Quản đốc',
+                  child: InkWell(
+                    onTap: widget.onNavigateToAdmin,
+                    borderRadius: BorderRadius.circular(10),
+                    child: Container(
+                      height: 36,
+                      padding: const EdgeInsets.symmetric(horizontal: 10),
+                      decoration: BoxDecoration(
+                        color: AppColors.primary.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(color: AppColors.primary.withValues(alpha: 0.25), width: 1),
+                      ),
+                      child: const Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.shield_outlined, size: 15, color: AppColors.primary),
+                          SizedBox(width: 5),
+                          Text(
+                            'Quản đốc',
+                            style: TextStyle(
+                              color: AppColors.primary,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                            ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
                   ),
                 ),
+                const SizedBox(width: 8),
 
                 // Settings icon button
-                IconButton(
-                  icon: const Icon(Icons.settings_outlined, color: AppColors.textSecondary, size: 22),
-                  onPressed: widget.onOpenSettings,
-                  tooltip: 'Cài đặt hệ thống',
+                Tooltip(
+                  message: 'Cài đặt hệ thống',
+                  child: InkWell(
+                    onTap: widget.onOpenSettings,
+                    borderRadius: BorderRadius.circular(10),
+                    child: Container(
+                      width: 36,
+                      height: 36,
+                      decoration: BoxDecoration(
+                        color: AppColors.surfaceLight,
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(color: AppColors.cardBorder, width: 1),
+                      ),
+                      child: const Center(
+                        child: Icon(Icons.settings_outlined, color: AppColors.textSecondary, size: 19),
+                      ),
+                    ),
+                  ),
                 ),
               ],
             ),
