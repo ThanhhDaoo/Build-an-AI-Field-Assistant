@@ -1,10 +1,25 @@
 # OS files
 .DS_Store
-*/.DS_Store
-*.DS_Store
+**/.DS_Store
+._*
+**/.tmp
+**/*.bak
+
+# Flutter / Dart
+**/build/
+.dart_tool/
+**/.dart_tool/
+.flutter-plugins-dependencies
+**/.flutter-plugins-dependencies
+.pub-cache/
+.pub/
 
 # IntelliJ / Android Studio
 .idea/
+**/.idea/
 *.iml
-.vercel
+**/*.iml
+
+# Environment & Hosting
+.vercel/
 .env*
