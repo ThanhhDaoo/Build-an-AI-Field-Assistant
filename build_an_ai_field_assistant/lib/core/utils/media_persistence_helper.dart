@@ -4,6 +4,7 @@ import 'dart:ui' as ui;
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:image_picker/image_picker.dart';
+import 'web_storage/web_storage_helper.dart';
 
 /// Helper chuyên biệt xử lý lưu trữ vĩnh viễn hình ảnh và âm thanh
 /// trên mọi nền tảng (Web, Android, iOS, macOS) dưới dạng Data URI / Base64
@@ -16,6 +17,23 @@ class MediaPersistenceHelper {
   static Future<String> persistImage(XFile pickedFile) async {
     try {
       final bytes = await pickedFile.readAsBytes();
+
+      // 1. Trên nền tảng Web: Ưu tiên nén ảnh qua HTML Canvas thành JPEG dung lượng siêu nhẹ (40KB - 80KB)
+      if (kIsWeb) {
+        try {
+          final canvasJpeg = await WebStorageHelper.compressImageToJpeg(
+            bytes,
+            maxWidth: 1024,
+            quality: 0.75,
+          );
+          if (canvasJpeg != null && canvasJpeg.isNotEmpty) {
+            return canvasJpeg;
+          }
+        } catch (canvasErr) {
+          debugPrint('Nén ảnh Canvas Web gặp lỗi, chuyển sang fallback: $canvasErr');
+        }
+      }
+
       Uint8List finalBytes = bytes;
       String mime = 'image/jpeg';
       final pathLower = pickedFile.name.toLowerCase();
@@ -25,7 +43,7 @@ class MediaPersistenceHelper {
         mime = 'image/webp';
       }
 
-      // Tự động thu nhỏ ảnh lớn (> 400KB) để tối ưu bộ nhớ và tránh quá tải quota lưu trữ trình duyệt Web
+      // Tự động thu nhỏ ảnh lớn (> 400KB) để tối ưu bộ nhớ và tránh quá tải quota lưu trữ
       if (bytes.length > 400 * 1024) {
         try {
           final codec = await ui.instantiateImageCodec(bytes, targetWidth: 1024);

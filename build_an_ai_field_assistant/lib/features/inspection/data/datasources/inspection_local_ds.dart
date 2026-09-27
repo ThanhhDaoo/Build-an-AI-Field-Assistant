@@ -5,6 +5,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sqflite/sqflite.dart';
 import '../../../../core/constants/app_constants.dart';
 import '../../../../core/errors/exceptions.dart';
+import '../../../../core/utils/web_storage/web_storage_helper.dart';
 import '../models/inspection_ticket_model.dart';
 
 abstract class IInspectionLocalDataSource {
@@ -112,7 +113,7 @@ class InspectionLocalDataSourceImpl implements IInspectionLocalDataSource {
           return List.from(_inMemoryTickets!)
             ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
         }
-        final list = await _getFromPreferences();
+        final list = await _loadWebTickets();
         _inMemoryTickets = List.from(list);
         return list;
       }
@@ -151,8 +152,8 @@ class InspectionLocalDataSourceImpl implements IInspectionLocalDataSource {
   @override
   Future<void> saveTicket(InspectionTicketModel ticket) async {
     try {
-      // 1. Luôn cập nhật bộ nhớ đệm In-Memory trước tiên để bản Web không bao giờ bị mất phiếu
-      _inMemoryTickets ??= await _getFromPreferences();
+      // 1. Luôn cập nhật bộ nhớ đệm In-Memory trước tiên
+      _inMemoryTickets ??= await _loadWebTickets();
       final inMemIdx = _inMemoryTickets!.indexWhere((t) => t.id == ticket.id);
       if (inMemIdx != -1) {
         _inMemoryTickets![inMemIdx] = ticket;
@@ -206,12 +207,12 @@ class InspectionLocalDataSourceImpl implements IInspectionLocalDataSource {
           }
         }
       } else {
-        // 3. Dự phòng cho Web (SharedPreferences có cơ chế tự phục hồi chống QuotaExceededError)
-        await _saveToPreferences(ticket);
+        // 3. Lưu trữ vĩnh viễn trên Web (IndexedDB lưu full ảnh/audio + SharedPreferences backup)
+        await _saveWebTickets(ticket);
       }
     } catch (e) {
       if (kIsWeb && _inMemoryTickets != null) {
-        debugPrint('Lỗi lưu trữ web được bỏ qua, phiếu đã được giữ an toàn trong bộ nhớ: $e');
+        debugPrint('Web storage fallback preserved ticket in memory: $e');
         return;
       }
       throw CacheException('Không thể lưu phiếu kiểm tra: $e');
@@ -230,15 +231,7 @@ class InspectionLocalDataSourceImpl implements IInspectionLocalDataSource {
           whereArgs: [id],
         );
       } else {
-        try {
-          final prefs = await SharedPreferences.getInstance();
-          final list = await _getFromPreferences();
-          list.removeWhere((item) => item.id == id);
-          final encoded = jsonEncode(list.map((e) => e.toJson()).toList());
-          await prefs.setString(_prefsKey, encoded);
-        } catch (e) {
-          debugPrint('Lỗi xóa khỏi SharedPreferences: $e');
-        }
+        await _syncWebPersistence();
       }
     } catch (e) {
       throw CacheException('Không thể xóa phiếu: $e');
@@ -272,98 +265,131 @@ class InspectionLocalDataSourceImpl implements IInspectionLocalDataSource {
           whereArgs: [id],
         );
       } else {
-        try {
-          final list = await _getFromPreferences();
-          final index = list.indexWhere((item) => item.id == id);
-          if (index != -1) {
-            final updated = list[index].copyWith(
-              status: 'synced',
-              updatedAt: DateTime.now(),
-            );
-            list[index] = InspectionTicketModel.fromEntity(updated);
-            final prefs = await SharedPreferences.getInstance();
-            final encoded = jsonEncode(list.map((e) => e.toJson()).toList());
-            await prefs.setString(_prefsKey, encoded);
-          }
-        } catch (e) {
-          debugPrint('Lỗi cập nhật đồng bộ lên SharedPreferences: $e');
-        }
+        await _syncWebPersistence();
       }
     } catch (e) {
       throw CacheException('Không thể cập nhật trạng thái đồng bộ: $e');
     }
   }
 
-  // --- Fallback SharedPreferences Implementation (e.g. for Web) ---
-  Future<List<InspectionTicketModel>> _getFromPreferences() async {
+  // --- Web Persistent Storage: IndexedDB (GBs capacity) + SharedPreferences backup ---
+
+  Future<List<InspectionTicketModel>> _loadWebTickets() async {
+    // Ưu tiên 1: Tải từ IndexedDB (lưu trữ vĩnh viễn không giới hạn 5MB)
+    if (kIsWeb) {
+      try {
+        final idbData = await WebStorageHelper.loadTickets();
+        if (idbData != null && idbData.isNotEmpty) {
+          final decoded = jsonDecode(idbData);
+          if (decoded is List && decoded.isNotEmpty) {
+            final list = decoded
+                .whereType<Map>()
+                .map((e) => InspectionTicketModel.fromJson(Map<String, dynamic>.from(e)))
+                .toList()
+              ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
+            if (list.isNotEmpty) {
+              return list;
+            }
+          }
+        }
+      } catch (e) {
+        debugPrint('Lỗi nạp từ IndexedDB: $e');
+      }
+    }
+
+    // Ưu tiên 2: Tải dự phòng từ SharedPreferences
     try {
       final prefs = await SharedPreferences.getInstance();
       final data = prefs.getString(_prefsKey);
-      if (data == null || data.isEmpty) {
-        return _generateInitialSeedTickets();
+      if (data != null && data.isNotEmpty) {
+        final decoded = jsonDecode(data);
+        if (decoded is List && decoded.isNotEmpty) {
+          final list = decoded
+              .whereType<Map>()
+              .map((e) => InspectionTicketModel.fromJson(Map<String, dynamic>.from(e)))
+              .toList()
+            ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
+          if (list.isNotEmpty) {
+            return list;
+          }
+        }
       }
-      final decoded = jsonDecode(data);
-      if (decoded is List) {
-        return decoded
-            .whereType<Map>()
-            .map((e) => InspectionTicketModel.fromJson(Map<String, dynamic>.from(e)))
-            .toList()
-          ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
-      }
-      return _generateInitialSeedTickets();
     } catch (e) {
       debugPrint('Lỗi đọc dữ liệu từ SharedPreferences: $e');
-      return _generateInitialSeedTickets();
     }
+
+    // Ưu tiên 3: Tạo danh sách mẫu ban đầu khi người dùng mới vào lần đầu
+    return _generateInitialSeedTickets();
   }
 
-  Future<void> _saveToPreferences(InspectionTicketModel ticket) async {
+  Future<void> _saveWebTickets(InspectionTicketModel ticket) async {
+    final list = List<InspectionTicketModel>.from(_inMemoryTickets ?? await _loadWebTickets());
+    final index = list.indexWhere((item) => item.id == ticket.id);
+    if (index != -1) {
+      list[index] = ticket;
+    } else {
+      list.insert(0, ticket);
+    }
+    _inMemoryTickets = list;
+
+    await _syncWebPersistence();
+  }
+
+  Future<void> _syncWebPersistence() async {
+    final list = _inMemoryTickets ?? await _loadWebTickets();
+
+    // 1. Lưu vĩnh viễn vào IndexedDB (chứa 100% ảnh full và audio không bị giới hạn 5MB)
+    if (kIsWeb) {
+      try {
+        final encodedFull = jsonEncode(list.map((e) => e.toJson()).toList());
+        await WebStorageHelper.saveTickets(encodedFull);
+      } catch (e) {
+        debugPrint('IndexedDB save failed: $e');
+      }
+    }
+
+    // 2. Lưu dự phòng vào SharedPreferences
     try {
       final prefs = await SharedPreferences.getInstance();
-      final list = List<InspectionTicketModel>.from(_inMemoryTickets ?? await _getFromPreferences());
-      final index = list.indexWhere((item) => item.id == ticket.id);
-      if (index != -1) {
-        list[index] = ticket;
-      } else {
-        list.insert(0, ticket);
-      }
-
-      // Giới hạn danh sách lưu trữ trình duyệt tối đa 30 phiếu để tránh vượt quota
-      final cappedList = list.length > 30 ? list.sublist(0, 30) : list;
-
-      // Bước 1: Thử lưu toàn bộ dữ liệu (nếu dung lượng dưới 5MB)
-      try {
-        final encoded = jsonEncode(cappedList.map((e) => e.toJson()).toList());
-        await prefs.setString(_prefsKey, encoded);
-        return;
-      } catch (quotaError) {
-        debugPrint('Trình duyệt báo vượt quota localStorage ($quotaError). Bật chế độ nén gọn...');
-      }
-
-      // Bước 2: Tự động lược bớt Base64 media khổng lồ cho bản lưu localStorage,
-      // trong khi bộ nhớ RAM _inMemoryTickets vẫn giữ đầy đủ 100% dữ liệu gốc!
-      try {
+      final cappedList = list.length > 25 ? list.sublist(0, 25) : list;
+      
+      final encodedFull = jsonEncode(cappedList.map((e) => e.toJson()).toList());
+      final success = await prefs.setString(_prefsKey, encodedFull);
+      
+      // Nếu SharedPreferences từ chối (vượt quota 5MB của Safari), lưu bản text siêu gọn
+      if (!success) {
         final sanitized = cappedList.map((t) {
-          String? img = t.imagePath;
-          if (img != null && img.length > 30000) {
-            img = null; // Tránh tràn dung lượng 5MB của Safari Mobile
-          }
-          String? aud = t.audioPath;
-          if (aud != null && aud.length > 30000) {
-            aud = null;
-          }
-          return t.copyWith(imagePath: img, audioPath: aud);
+          return InspectionTicketModel(
+            id: t.id,
+            title: t.title,
+            description: t.description,
+            location: t.location,
+            category: t.category,
+            priority: t.priority,
+            status: t.status,
+            suggestedAction: t.suggestedAction,
+            inspectorName: t.inspectorName,
+            confidenceScore: t.confidenceScore,
+            rawTranscript: t.rawTranscript,
+            audioPath: null,
+            imagePath: (t.imagePath != null && t.imagePath!.length < 25000) ? t.imagePath : null,
+            equipmentId: t.equipmentId,
+            detectedIssues: t.detectedIssues,
+            requiredParts: t.requiredParts,
+            operationalStatus: t.operationalStatus,
+            assignedTo: t.assignedTo,
+            managerNotes: t.managerNotes,
+            resolvedAt: t.resolvedAt,
+            createdAt: t.createdAt,
+            updatedAt: t.updatedAt,
+          );
         }).toList();
 
-        final encodedSanitized = jsonEncode(
-          sanitized.map((e) => InspectionTicketModel.fromEntity(e).toJson()).toList(),
-        );
+        final encodedSanitized = jsonEncode(sanitized.map((e) => e.toJson()).toList());
         await prefs.setString(_prefsKey, encodedSanitized);
-      } catch (quotaError2) {
-        debugPrint('SharedPreferences quota exceeded hoàn toàn: $quotaError2. Phiếu được giữ an toàn trong RAM.');
       }
     } catch (e) {
-      debugPrint('SharedPreferences không khả dụng trên trình duyệt này: $e');
+      debugPrint('SharedPreferences backup save failed: $e');
     }
   }
 
