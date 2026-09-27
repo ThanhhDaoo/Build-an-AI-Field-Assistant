@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:io' as io;
+import 'dart:ui' as ui;
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:image_picker/image_picker.dart';
@@ -15,8 +16,7 @@ class MediaPersistenceHelper {
   static Future<String> persistImage(XFile pickedFile) async {
     try {
       final bytes = await pickedFile.readAsBytes();
-      final base64Str = base64Encode(bytes);
-
+      Uint8List finalBytes = bytes;
       String mime = 'image/jpeg';
       final pathLower = pickedFile.name.toLowerCase();
       if (pathLower.endsWith('.png')) {
@@ -25,6 +25,25 @@ class MediaPersistenceHelper {
         mime = 'image/webp';
       }
 
+      // Tự động thu nhỏ ảnh lớn (> 400KB) để tối ưu bộ nhớ và tránh quá tải quota lưu trữ trình duyệt Web
+      if (bytes.length > 400 * 1024) {
+        try {
+          final codec = await ui.instantiateImageCodec(bytes, targetWidth: 1024);
+          final frame = await codec.getNextFrame();
+          final byteData = await frame.image.toByteData(format: ui.ImageByteFormat.png);
+          if (byteData != null) {
+            final resizedBytes = byteData.buffer.asUint8List();
+            if (resizedBytes.length < bytes.length) {
+              finalBytes = resizedBytes;
+              mime = 'image/png';
+            }
+          }
+        } catch (resizeErr) {
+          debugPrint('Không thể tự động thu nhỏ ảnh: $resizeErr');
+        }
+      }
+
+      final base64Str = base64Encode(finalBytes);
       return 'data:$mime;base64,$base64Str';
     } catch (e) {
       debugPrint('Lỗi mã hóa ảnh vĩnh viễn: $e');

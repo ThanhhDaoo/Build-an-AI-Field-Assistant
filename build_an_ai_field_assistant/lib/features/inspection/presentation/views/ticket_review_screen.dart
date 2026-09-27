@@ -156,7 +156,7 @@ class _TicketReviewScreenState extends State<TicketReviewScreen> {
     } else {
       DialogHelper.showSnackBar(
         context,
-        'Không thể lưu biên bản. Vui lòng thử lại.',
+        widget.controller.errorMessage ?? 'Không thể lưu biên bản. Vui lòng thử lại.',
         isError: true,
       );
     }

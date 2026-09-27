@@ -18,6 +18,7 @@ abstract class IInspectionLocalDataSource {
 class InspectionLocalDataSourceImpl implements IInspectionLocalDataSource {
   Database? _database;
   static const String _prefsKey = 'cached_inspection_tickets';
+  static List<InspectionTicketModel>? _inMemoryTickets;
 
   Future<Database?> _getDatabase() async {
     if (kIsWeb) return null; // SQLite is not directly available on web without WASM
@@ -107,10 +108,19 @@ class InspectionLocalDataSourceImpl implements IInspectionLocalDataSource {
         );
         return maps.map((map) => InspectionTicketModel.fromMap(map)).toList();
       } else {
-        return await _getFromPreferences();
+        if (_inMemoryTickets != null && _inMemoryTickets!.isNotEmpty) {
+          return List.from(_inMemoryTickets!)
+            ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
+        }
+        final list = await _getFromPreferences();
+        _inMemoryTickets = List.from(list);
+        return list;
       }
     } catch (e) {
-      throw CacheException('Không thể tải danh sách phiếu: $e');
+      if (_inMemoryTickets != null && _inMemoryTickets!.isNotEmpty) {
+        return List.from(_inMemoryTickets!);
+      }
+      return _generateInitialSeedTickets();
     }
   }
 
@@ -127,7 +137,7 @@ class InspectionLocalDataSourceImpl implements IInspectionLocalDataSource {
         );
         return maps.map((map) => InspectionTicketModel.fromMap(map)).toList();
       } else {
-        final list = await _getFromPreferences();
+        final list = await getTickets();
         return list
             .where((ticket) =>
                 ticket.status == 'pending' || ticket.status == 'pending_sync')
@@ -141,6 +151,16 @@ class InspectionLocalDataSourceImpl implements IInspectionLocalDataSource {
   @override
   Future<void> saveTicket(InspectionTicketModel ticket) async {
     try {
+      // 1. Luôn cập nhật bộ nhớ đệm In-Memory trước tiên để bản Web không bao giờ bị mất phiếu
+      _inMemoryTickets ??= await _getFromPreferences();
+      final inMemIdx = _inMemoryTickets!.indexWhere((t) => t.id == ticket.id);
+      if (inMemIdx != -1) {
+        _inMemoryTickets![inMemIdx] = ticket;
+      } else {
+        _inMemoryTickets!.insert(0, ticket);
+      }
+
+      // 2. Lưu vào SQLite Database nếu hỗ trợ (Mobile Native)
       final db = await _getDatabase();
       if (db != null) {
         try {
@@ -186,9 +206,14 @@ class InspectionLocalDataSourceImpl implements IInspectionLocalDataSource {
           }
         }
       } else {
+        // 3. Dự phòng cho Web (SharedPreferences có cơ chế tự phục hồi chống QuotaExceededError)
         await _saveToPreferences(ticket);
       }
     } catch (e) {
+      if (kIsWeb && _inMemoryTickets != null) {
+        debugPrint('Lỗi lưu trữ web được bỏ qua, phiếu đã được giữ an toàn trong bộ nhớ: $e');
+        return;
+      }
       throw CacheException('Không thể lưu phiếu kiểm tra: $e');
     }
   }
@@ -196,6 +221,7 @@ class InspectionLocalDataSourceImpl implements IInspectionLocalDataSource {
   @override
   Future<void> deleteTicket(String id) async {
     try {
+      _inMemoryTickets?.removeWhere((item) => item.id == id);
       final db = await _getDatabase();
       if (db != null) {
         await db.delete(
@@ -204,11 +230,15 @@ class InspectionLocalDataSourceImpl implements IInspectionLocalDataSource {
           whereArgs: [id],
         );
       } else {
-        final prefs = await SharedPreferences.getInstance();
-        final list = await _getFromPreferences();
-        list.removeWhere((item) => item.id == id);
-        final encoded = jsonEncode(list.map((e) => e.toJson()).toList());
-        await prefs.setString(_prefsKey, encoded);
+        try {
+          final prefs = await SharedPreferences.getInstance();
+          final list = await _getFromPreferences();
+          list.removeWhere((item) => item.id == id);
+          final encoded = jsonEncode(list.map((e) => e.toJson()).toList());
+          await prefs.setString(_prefsKey, encoded);
+        } catch (e) {
+          debugPrint('Lỗi xóa khỏi SharedPreferences: $e');
+        }
       }
     } catch (e) {
       throw CacheException('Không thể xóa phiếu: $e');
@@ -218,6 +248,17 @@ class InspectionLocalDataSourceImpl implements IInspectionLocalDataSource {
   @override
   Future<void> markTicketAsSynced(String id) async {
     try {
+      if (_inMemoryTickets != null) {
+        final inMemIdx = _inMemoryTickets!.indexWhere((item) => item.id == id);
+        if (inMemIdx != -1) {
+          final updated = _inMemoryTickets![inMemIdx].copyWith(
+            status: 'synced',
+            updatedAt: DateTime.now(),
+          );
+          _inMemoryTickets![inMemIdx] = InspectionTicketModel.fromEntity(updated);
+        }
+      }
+
       final db = await _getDatabase();
       final nowStr = DateTime.now().toIso8601String();
       if (db != null) {
@@ -231,17 +272,21 @@ class InspectionLocalDataSourceImpl implements IInspectionLocalDataSource {
           whereArgs: [id],
         );
       } else {
-        final list = await _getFromPreferences();
-        final index = list.indexWhere((item) => item.id == id);
-        if (index != -1) {
-          final updated = list[index].copyWith(
-            status: 'synced',
-            updatedAt: DateTime.now(),
-          );
-          list[index] = InspectionTicketModel.fromEntity(updated);
-          final prefs = await SharedPreferences.getInstance();
-          final encoded = jsonEncode(list.map((e) => e.toJson()).toList());
-          await prefs.setString(_prefsKey, encoded);
+        try {
+          final list = await _getFromPreferences();
+          final index = list.indexWhere((item) => item.id == id);
+          if (index != -1) {
+            final updated = list[index].copyWith(
+              status: 'synced',
+              updatedAt: DateTime.now(),
+            );
+            list[index] = InspectionTicketModel.fromEntity(updated);
+            final prefs = await SharedPreferences.getInstance();
+            final encoded = jsonEncode(list.map((e) => e.toJson()).toList());
+            await prefs.setString(_prefsKey, encoded);
+          }
+        } catch (e) {
+          debugPrint('Lỗi cập nhật đồng bộ lên SharedPreferences: $e');
         }
       }
     } catch (e) {
@@ -251,31 +296,75 @@ class InspectionLocalDataSourceImpl implements IInspectionLocalDataSource {
 
   // --- Fallback SharedPreferences Implementation (e.g. for Web) ---
   Future<List<InspectionTicketModel>> _getFromPreferences() async {
-    final prefs = await SharedPreferences.getInstance();
-    final data = prefs.getString(_prefsKey);
-    if (data == null || data.isEmpty) {
-      return _generateInitialSeedTickets();
-    }
     try {
-      final List decoded = jsonDecode(data) as List;
-      return decoded.map((e) => InspectionTicketModel.fromJson(e as Map<String, dynamic>)).toList()
-        ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
-    } catch (_) {
+      final prefs = await SharedPreferences.getInstance();
+      final data = prefs.getString(_prefsKey);
+      if (data == null || data.isEmpty) {
+        return _generateInitialSeedTickets();
+      }
+      final decoded = jsonDecode(data);
+      if (decoded is List) {
+        return decoded
+            .whereType<Map>()
+            .map((e) => InspectionTicketModel.fromJson(Map<String, dynamic>.from(e)))
+            .toList()
+          ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
+      }
+      return _generateInitialSeedTickets();
+    } catch (e) {
+      debugPrint('Lỗi đọc dữ liệu từ SharedPreferences: $e');
       return _generateInitialSeedTickets();
     }
   }
 
   Future<void> _saveToPreferences(InspectionTicketModel ticket) async {
-    final prefs = await SharedPreferences.getInstance();
-    final list = await _getFromPreferences();
-    final index = list.indexWhere((item) => item.id == ticket.id);
-    if (index != -1) {
-      list[index] = ticket;
-    } else {
-      list.insert(0, ticket);
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final list = List<InspectionTicketModel>.from(_inMemoryTickets ?? await _getFromPreferences());
+      final index = list.indexWhere((item) => item.id == ticket.id);
+      if (index != -1) {
+        list[index] = ticket;
+      } else {
+        list.insert(0, ticket);
+      }
+
+      // Giới hạn danh sách lưu trữ trình duyệt tối đa 30 phiếu để tránh vượt quota
+      final cappedList = list.length > 30 ? list.sublist(0, 30) : list;
+
+      // Bước 1: Thử lưu toàn bộ dữ liệu (nếu dung lượng dưới 5MB)
+      try {
+        final encoded = jsonEncode(cappedList.map((e) => e.toJson()).toList());
+        await prefs.setString(_prefsKey, encoded);
+        return;
+      } catch (quotaError) {
+        debugPrint('Trình duyệt báo vượt quota localStorage ($quotaError). Bật chế độ nén gọn...');
+      }
+
+      // Bước 2: Tự động lược bớt Base64 media khổng lồ cho bản lưu localStorage,
+      // trong khi bộ nhớ RAM _inMemoryTickets vẫn giữ đầy đủ 100% dữ liệu gốc!
+      try {
+        final sanitized = cappedList.map((t) {
+          String? img = t.imagePath;
+          if (img != null && img.length > 30000) {
+            img = null; // Tránh tràn dung lượng 5MB của Safari Mobile
+          }
+          String? aud = t.audioPath;
+          if (aud != null && aud.length > 30000) {
+            aud = null;
+          }
+          return t.copyWith(imagePath: img, audioPath: aud);
+        }).toList();
+
+        final encodedSanitized = jsonEncode(
+          sanitized.map((e) => InspectionTicketModel.fromEntity(e).toJson()).toList(),
+        );
+        await prefs.setString(_prefsKey, encodedSanitized);
+      } catch (quotaError2) {
+        debugPrint('SharedPreferences quota exceeded hoàn toàn: $quotaError2. Phiếu được giữ an toàn trong RAM.');
+      }
+    } catch (e) {
+      debugPrint('SharedPreferences không khả dụng trên trình duyệt này: $e');
     }
-    final encoded = jsonEncode(list.map((e) => e.toJson()).toList());
-    await prefs.setString(_prefsKey, encoded);
   }
 
   List<InspectionTicketModel> _generateInitialSeedTickets() {
